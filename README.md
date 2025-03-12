@@ -2,6 +2,7 @@
 
 ## 📌 Overview  
 Push-Apps is a web-based fitness application built with **ASP.NET Core** that helps users track workouts, estimate calorie burn, and access premium fitness and nutrition plans. The platform supports **free users** with basic tracking features and **premium users** with trainer consultations and meal plans.
+Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt
 
 ---
 
