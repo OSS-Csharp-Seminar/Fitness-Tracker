@@ -1,30 +1,37 @@
-# Fitness-Tracker
+# Push-Apps – Workout & Nutrition Companion  
 
-1. User Data (Authentication & Profiles)
-User Registration & Login: Secure authentication with role-based access (Free & Premium users).
-Profile Management: Users can edit weight, age, fitness goals, and preferences.
-Workout & Progress Tracking: Users log workouts, check history, and track calorie burn.
-Subscription Management: Premium users can upgrade, cancel, or renew plans.
+## 📌 Overview  
+FitTrack is a web-based fitness application built with **ASP.NET Core** that helps users track workouts, estimate calorie burn, and access premium fitness and nutrition plans. The platform supports **free users** with basic tracking features and **premium users** with trainer consultations and meal plans.
 
-3. Trainings (Workout Logging & Programs)
-Workout Logger: Users can log exercise type, duration, and intensity.
-Calorie Burn Calculator: Calculates estimated calories burned based on input.
-Workout History & Analytics: Graphs and stats for past workouts and progress tracking.
-Structured Workout Programs (Premium Feature):
-Pre-made workout plans (Beginner, Weight Loss, Strength Training, etc.).
-Video tutorials and step-by-step instructions.
-Custom plans provided by trainers.
+---
 
-3. Food Menus (Meal Planning & Nutrition)
-Basic Calorie Estimator: Users can input meals and see an estimated calorie intake.
-Premium Meal Plans:
-Custom meal recommendations based on user goals (weight loss, muscle gain, etc.).
-Weekly meal schedules with ingredients and nutrition breakdowns.
-Ability to save favorite meals and track nutrition history.
+## 🚀 Features  
+
+### **1️⃣ User Data (Authentication & Profiles)**
+- ✅ **User Authentication**: Secure login & registration (Free & Premium roles).  
+- ✅ **Profile Management**: Edit weight, age, fitness goals, and preferences.  
+- ✅ **Workout & Progress Tracking**: Log workouts and track calorie burn.  
+- ✅ **Subscription Management**: Upgrade, cancel, or renew premium plans.  
+
+### **2️⃣ Trainings (Workout Logging & Programs)**
+- 🏋️ **Workout Logger**: Log exercise type, duration, and intensity.  
+- 🔥 **Calorie Burn Calculator**: Estimate calories burned per workout.  
+- 📊 **Workout History & Analytics**: Track past workouts with charts.  
+- 🏆 **Premium Structured Programs**:  
+  - Pre-made plans (Beginner, Strength Training, Weight Loss, etc.).  
+
+### **3️⃣ Food Menus (Meal Planning & Nutrition)**
+- 🍽️ **Basic Calorie Estimator**: Input meals & get estimated calories.  
+- 🥗 **Premium Meal Plans**:  
+  - Custom meal recommendations (weight loss, muscle gain, etc.).  
+  - Weekly meal schedules with ingredients & nutrition breakdowns.  
+  - Save favorite meals and track nutrition history.  
+
+### **4️⃣ Trainers (Premium Feature)**
+- 🏅 **Trainer Directory**: Browse and select professional trainers.  
+- 💬 **Consultations**: Book chat or video sessions with trainers.  
+- 📄 **Personalized Workout & Nutrition Plans**: Trainers provide tailored plans.  
+- 📈 **Progress Tracking with Trainer Feedback**: Adjust workouts based on progress.  
 
 
-4. Trainers (Premium-Only Feature)
-Trainer Directory: Premium users can browse and select trainers.
-Trainer Consultations: Book one-on-one chat or video sessions.
-Personalized Workout & Nutrition Plans: Trainers provide customized guidance.
-Progress Tracking with Trainer Feedback: Trainers can review user data and adjust plans accordingly.
+---
