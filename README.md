@@ -7,7 +7,7 @@ Push-Apps is a web-based fitness application built with **ASP.NET Core** that he
 
 Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt
 
----
+--- 
 
 ## 🚀 Features  
 
