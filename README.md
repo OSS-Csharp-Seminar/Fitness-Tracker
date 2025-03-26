@@ -33,3 +33,5 @@ Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt
 - 📄 **Personalized Workout & Nutrition Plans**: Trainers provide tailored plans.  
 
 ---
+
+![image](https://github.com/user-attachments/assets/162f8598-dcd1-488a-84fe-49e474fa52d0)
