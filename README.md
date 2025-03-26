@@ -34,4 +34,5 @@ Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt
 
 ---
 
-![image](https://github.com/user-attachments/assets/162f8598-dcd1-488a-84fe-49e474fa52d0)
+![image](https://github.com/user-attachments/assets/2db7f5bf-7413-4566-93a8-bede27785c65)
+
