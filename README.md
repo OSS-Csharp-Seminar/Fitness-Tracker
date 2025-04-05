@@ -34,5 +34,5 @@ Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt
 
 ---
 
-![image](https://github.com/user-attachments/assets/2db7f5bf-7413-4566-93a8-bede27785c65)
+![image](https://github.com/OSS-Csharp-Seminar/Fitness-Tracker/blob/main/db_diagram.png?raw=true)
 
