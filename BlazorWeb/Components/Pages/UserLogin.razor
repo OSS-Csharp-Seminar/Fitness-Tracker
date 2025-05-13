@@ -1,0 +1,31 @@
+﻿@page "/UserLogin"
+@rendermode InteractiveServer
+@using Domain.Entities
+@using Application.Interfaces
+@using System.ComponentModel.DataAnnotations
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+@using Microsoft.AspNetCore.WebUtilities
+
+<h3>Hello, @username</h3>
+
+@code {
+    private string userId;
+    private string username;
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("userId", out var userIdValue))
+        {
+            userId = userIdValue;
+        }
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("username", out var usernameValue))
+        {
+            username = usernameValue;
+        }
+    }
+}

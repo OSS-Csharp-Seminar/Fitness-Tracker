@@ -1,0 +1,65 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@using Domain.Entities
+@using Application.Interfaces
+@using System.ComponentModel.DataAnnotations
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserRegisterLayout
+
+<h3>Login</h3>
+
+<EditForm Model="@registerModel" OnValidSubmit="Handlelogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group mb-3">
+        <label for="email">Email:</label>
+        <InputText id="email" @bind-Value="registerModel.Email" class="form-control" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="password">Lozinka:</label>
+        <InputText id="password" @bind-Value="registerModel.Password" type="password" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        @errorMessage
+    </div>
+}
+
+@code {
+    private RegisterModel registerModel = new RegisterModel();
+    private string errorMessage = string.Empty;
+
+    private async Task Handlelogin()
+    {
+        try
+        {
+            (string userId, string username) = await UserService.Login(registerModel.Email, registerModel.Password);
+            
+            NavigationManager.NavigateTo($"/userLogin?userId={Uri.EscapeDataString(userId)}&username={Uri.EscapeDataString(username)}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    public class RegisterModel
+    {
+
+        [Required(ErrorMessage = "Email je obavezan")]
+        [EmailAddress(ErrorMessage = "Neispravan format emaila")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Lozinka je obavezna")]
+        public string Password { get; set; } = string.Empty;
+
+    }
+}

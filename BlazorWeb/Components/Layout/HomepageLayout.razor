@@ -1,0 +1,38 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Web
+<PageTitle>PushApps - Fitness aplikacija</PageTitle>
+<HeadContent>
+    <link rel="stylesheet" href="homepage-layout.css" />
+</HeadContent>
+<div class="hero-page">
+    <div class="nav-container">
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <a href="/">PushApps</a>
+            </div>
+            <div class="navbar-links">
+                <a href="/login" class="nav-link">LOGIN</a>
+                <a href="/register" class="nav-link">SIGNUP</a>
+            </div>
+        </nav>
+    </div>
+    <div class="hero-content-wrapper">
+        <div class="hero-content">
+            <div class="hero-text">
+                @LeftContent
+            </div>
+            <div class="hero-visual">
+                @RightContent
+            </div>
+        </div>
+    </div>
+    <div class="main-content">
+        @Body
+    </div>
+</div>
+@code {
+    [Parameter]
+    public RenderFragment LeftContent { get; set; }
+    [Parameter]
+    public RenderFragment RightContent { get; set; }
+}
