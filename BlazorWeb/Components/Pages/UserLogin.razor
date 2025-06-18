@@ -1,31 +1,87 @@
-﻿@page "/UserLogin"
+﻿@page "/userlogin"
 @rendermode InteractiveServer
-@using Domain.Entities
 @using Application.Interfaces
-@using System.ComponentModel.DataAnnotations
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @layout UserLoginLayout
 @using Microsoft.AspNetCore.WebUtilities
 
-<h3>Hello, @username</h3>
+<div class="container mt-4">
+    <div class="row">
+        <div>
+            <h2 style="color:black">Welcome, @username!</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-secondary" @onclick="Logout">Logout</button>
+        </div>
+    </div>
+
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        @errorMessage
+    </div>
+}
 
 @code {
-    private string userId;
-    private string username;
+    private string userId = string.Empty;
+    private string username = string.Empty;
+    private string errorMessage = string.Empty;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("userId", out var userIdValue))
+        try
         {
-            userId = userIdValue;
-        }
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
 
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("username", out var usernameValue))
-        {
-            username = usernameValue;
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("userId", out var userIdValue))
+            {
+                userId = userIdValue;
+            }
+
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("username", out var usernameValue))
+            {
+                username = usernameValue;
+            }
+
+            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var userGuid))
+            {
+                var user = await UserService.GetByIdAsync(userGuid);
+                if (user != null)
+                {
+                    username = user.UserName; 
+                }
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/login");
+            }
         }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading user data: {ex.Message}";
+        }
+    }
+
+    private void GoToWorkoutPlan()
+    {
+        NavigationManager.NavigateTo($"/plan?userId={userId}&username={username}");
+    }
+
+    private void GoToProgress()
+    {
+        NavigationManager.NavigateTo($"/progress?userId={userId}&username={username}");
+    }
+
+    private void GoToProfile()
+    {
+        NavigationManager.NavigateTo($"/profile?userId={userId}&username={username}");
+    }
+
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/login");
     }
 }

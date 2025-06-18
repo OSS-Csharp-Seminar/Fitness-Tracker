@@ -64,74 +64,12 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SenderId");
-
                     b.HasIndex("TrainerId");
 
+                    b.HasIndex("SenderId", "TrainerId", "DateSent")
+                        .HasDatabaseName("IX_Message_Conversation");
+
                     b.ToTable("Messages");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Trening", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CaloriesBurned")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("Completed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<TimeSpan>("Duration")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("WorkoutPlanId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("WorkoutPlanId");
-
-                    b.ToTable("Trenings");
-                });
-
-            modelBuilder.Entity("Domain.Entities.TreningWorkout", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Completed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Reps")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Sets")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("TreningId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("WorkoutId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TreningId");
-
-                    b.HasIndex("WorkoutId");
-
-                    b.ToTable("TreningWorkouts");
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>
@@ -143,11 +81,19 @@ namespace Infrastructure.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Allergies")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly>("Birthday")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
@@ -160,6 +106,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<float>("Height")
+                        .HasColumnType("REAL");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
@@ -216,19 +165,11 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.PrimitiveCollection<string>("Allergies")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("BMI")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
-
-                    b.PrimitiveCollection<string>("Diagnosis")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<float>("Height")
-                        .HasColumnType("REAL");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("TEXT");
@@ -236,13 +177,10 @@ namespace Infrastructure.Migrations
                     b.Property<float>("Weight")
                         .HasColumnType("REAL");
 
-                    b.Property<string>("dietType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "Date")
+                        .HasDatabaseName("IX_UserPhysique_User_Date");
 
                     b.ToTable("UserPhysiques");
                 });
@@ -253,20 +191,48 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CaloriesBurned")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid>("CatalogId")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("Completed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeSpan>("Duration")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PlanId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Workout_Catalog");
+
+                    b.HasIndex("PlanId", "Date")
+                        .HasDatabaseName("IX_Workout_Plan_Date");
+
+                    b.ToTable("Workouts");
+                });
+
+            modelBuilder.Entity("Domain.Entities.WorkoutCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CaloriesBurned")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<TimeSpan>("Duration")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PlanId")
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkoutName")
@@ -279,9 +245,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlanId");
-
-                    b.ToTable("Workouts");
+                    b.ToTable("WorkoutCatalogs");
                 });
 
             modelBuilder.Entity("Domain.Entities.WorkoutPlan", b =>
@@ -289,9 +253,6 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("BMI")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("MaxCalories")
                         .HasColumnType("INTEGER");
@@ -315,6 +276,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkoutPlanType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkoutPreference")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -481,44 +446,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Trainer");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Trening", b =>
-                {
-                    b.HasOne("Domain.Entities.User", "User")
-                        .WithMany("Trenings")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.WorkoutPlan", "WorkoutPlan")
-                        .WithMany("Trenings")
-                        .HasForeignKey("WorkoutPlanId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-
-                    b.Navigation("WorkoutPlan");
-                });
-
-            modelBuilder.Entity("Domain.Entities.TreningWorkout", b =>
-                {
-                    b.HasOne("Domain.Entities.Trening", "Trening")
-                        .WithMany("TreningWorkouts")
-                        .HasForeignKey("TreningId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Workout", "Workout")
-                        .WithMany()
-                        .HasForeignKey("WorkoutId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Trening");
-
-                    b.Navigation("Workout");
-                });
-
             modelBuilder.Entity("Domain.Entities.UserPhysique", b =>
                 {
                     b.HasOne("Domain.Entities.User", "User")
@@ -532,13 +459,20 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Workout", b =>
                 {
+                    b.HasOne("Domain.Entities.WorkoutCatalog", "WorkoutCatalog")
+                        .WithOne("Workout")
+                        .HasForeignKey("Domain.Entities.Workout", "CatalogId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.WorkoutPlan", "Plan")
                         .WithMany("Workouts")
                         .HasForeignKey("PlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Plan");
+
+                    b.Navigation("WorkoutCatalog");
                 });
 
             modelBuilder.Entity("Domain.Entities.WorkoutPlan", b =>
@@ -603,11 +537,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.Trening", b =>
-                {
-                    b.Navigation("TreningWorkouts");
-                });
-
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Navigation("Meals");
@@ -618,15 +547,17 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("SentMessages");
 
-                    b.Navigation("Trenings");
-
                     b.Navigation("WorkoutPlans");
+                });
+
+            modelBuilder.Entity("Domain.Entities.WorkoutCatalog", b =>
+                {
+                    b.Navigation("Workout")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Entities.WorkoutPlan", b =>
                 {
-                    b.Navigation("Trenings");
-
                     b.Navigation("Workouts");
                 });
 #pragma warning restore 612, 618

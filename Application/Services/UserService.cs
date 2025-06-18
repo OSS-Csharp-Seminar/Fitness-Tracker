@@ -1,64 +1,97 @@
-﻿// Application/Services/UserService.cs
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using Domain.Entities;
 using Domain.Interfaces;
-using System;
-using System.Data;
-using System.Threading.Tasks;
 namespace Application.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
-        public async Task Check_Email_UsernameAsync(string username, string email)
+
+        public async Task CheckEmailUsernameAsync(string username, string email)
         {
             if (await _userRepository.GetByEmailAsync(email))
-                throw new ArgumentException($"User sa {email} vecpostoji!");
+                throw new ArgumentException($"User with email {email} already exists!");
+
             if (await _userRepository.GetByUsernameAsync(username))
-                throw new ArgumentException($"Korisnik sa {username} vec postoji!");
+                throw new ArgumentException($"User with username {username} already exists!");
         }
+
         public async Task<User> CreateUserAsync(User user, string password)
         {
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
+
             if (string.IsNullOrEmpty(password))
-                throw new ArgumentException("Lozinka je obavezna");
-            // Postavljanje osnovnih vrijednosti ako je potrebno
+                throw new ArgumentException("Password is required");
+
             if (user.Id == Guid.Empty)
                 user.Id = Guid.NewGuid();
-            await Check_Email_UsernameAsync(user.UserName, user.Email);
-            // Pozivanje repository metode
+
+            await CheckEmailUsernameAsync(user.UserName, user.Email);
+
             return await _userRepository.AddAsync(user, password);
         }
-        public async Task<(string Email, string UserName)> GetUserName_EmailAsync(Guid userId)
-        {
-            if (userId == Guid.Empty)
-                throw new ArgumentNullException(nameof(userId), "ID korisnika ne moze biti prazan!");
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null)
-                throw new KeyNotFoundException($"Korisnik sa Id-om: {userId} ne postoji!");
-            return (user.Email, user.UserName);
-        }
-        public async Task<(string userId, string username)> Login(string email, string password)
+
+        public async Task<(string UserId, string Username)> Login(string email, string password)
         {
             if (string.IsNullOrEmpty(email))
-                throw new ArgumentException("Email je obavezan!");
+                throw new ArgumentException("Email is required!");
+
             if (string.IsNullOrEmpty(password))
-                throw new ArgumentException("Password je obavezan");
+                throw new ArgumentException("Password is required!");
 
             var user = await _userRepository.GetEmailAsync(email);
-
             if (user == null)
                 throw new ArgumentException($"{email} is not registered.");
 
             bool isPasswordValid = await _userRepository.CheckPasswordAsync(user, password);
             if (!isPasswordValid)
                 throw new ArgumentException("Wrong password");
-            return (user.Email, user.UserName);
+
+            return (user.Id.ToString(), user.UserName); 
+        }
+
+        public async Task<User> GetByIdAsync(Guid id)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentNullException(nameof(id), "User ID cannot be empty!");
+
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                throw new KeyNotFoundException($"User with ID: {id} does not exist!");
+
+            return user;
+        }
+
+        public int CalculateAge(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            if (user.Birthday == default)
+                return 30; // Default age
+
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var age = today.Year - user.Birthday.Year;
+
+            // Provjeri da li je rođendan već prošao ove godine
+            if (today.DayOfYear < user.Birthday.DayOfYear)
+                age--;
+
+            return Math.Max(16, Math.Min(100, age)); // Ograniči na razumne vrijednosti
+        }
+
+        public float GetHeight(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            return user.Height;
         }
     }
 }

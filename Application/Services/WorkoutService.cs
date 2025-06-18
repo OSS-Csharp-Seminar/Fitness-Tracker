@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -18,27 +14,106 @@ namespace Application.Services
             _workoutRepository = workoutRepository;
         }
 
-        public async Task<Workout> GetWorkoutById(Guid id)
+        public async Task<Workout> CreateWorkout(Workout workout)
         {
-            if(id == Guid.Empty)
-               throw new ArgumentNullException("id");
+            if (workout == null)
+                throw new ArgumentNullException(nameof(workout));
 
-            return await _workoutRepository.GetByIdAsync(id);
+            if (workout.CatalogId == Guid.Empty)
+                throw new ArgumentException("Catalog ID is required");
+
+            if (workout.Date == default)
+                workout.Date = DateOnly.FromDateTime(DateTime.Now);
+
+            workout.Id = Guid.NewGuid();
+            workout.Completed = false;
+
+            return await _workoutRepository.AddAsync(workout);
         }
 
-        public async Task<IEnumerable<Workout>> GetAllWorkouts()
+        public async Task<List<Workout>> GetAllWorkouts()
         {
-            var workouts = await _workoutRepository.AllAsync();
-
-            return workouts;
+            var workouts = await _workoutRepository.GetAllAsync();
+            return workouts.ToList();
         }
 
-        public async Task<IEnumerable<Workout>> GetWorkoutByTag(string tag)
+        public async Task<List<Workout>> GetByUserId(Guid userId)
         {
-            if (tag == null)
-                throw new ArgumentNullException("The tag is empty!");
+            if (userId == Guid.Empty)
+                throw new ArgumentException("User ID is required");
 
-            return await _workoutRepository.GetByTagAsync(tag);
+            var query = await _workoutRepository.GetByUserIdAsync(userId);
+            return await query.ToListAsync();
+        }
+
+        public async Task<List<Workout>> GetByPlanId(Guid planId)
+        {
+            if (planId == Guid.Empty)
+                throw new ArgumentException("Plan ID is required");
+
+            var query = await _workoutRepository.GetByPlanIdAsync(planId);
+            return await query.ToListAsync();
+        }
+
+        public async Task<List<Workout>> GetTodayWorkouts(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            var query = await _workoutRepository.GetTodayWorkoutsAsync(user);
+            return await query.ToListAsync();
+        }
+
+        public async Task<List<Workout>> GetCompletedWorkouts(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            var query = await _workoutRepository.GetCompletedWorkoutsAsync(user);
+            return await query.ToListAsync();
+        }
+
+        public async Task<bool> MarkAsCompleted(Guid workoutId, TimeSpan duration)
+        {
+            if (workoutId == Guid.Empty)
+                throw new ArgumentException("Workout ID is required");
+
+            var workout = await _workoutRepository.GetByIdAsync(workoutId);
+            if (workout == null)
+                return false;
+
+            workout.Completed = true;
+            workout.Duration = duration;
+
+            return await _workoutRepository.UpdateAsync(workout);
+        }
+
+        public async Task<bool> UpdateWorkout(Workout workout)
+        {
+            if (workout == null)
+                throw new ArgumentNullException(nameof(workout));
+
+            if (workout.Id == Guid.Empty)
+                throw new ArgumentException("Workout ID is required");
+
+            return await _workoutRepository.UpdateAsync(workout);
+        }
+
+        public async Task<bool> DeleteWorkout(Guid id)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Workout ID is required");
+
+            return await _workoutRepository.DeleteAsync(id);
+        }
+
+        public async Task<int> GetTodayCompletedCount(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            return await _workoutRepository.GetCompletedCountAsync(user, today);
         }
     }
 }

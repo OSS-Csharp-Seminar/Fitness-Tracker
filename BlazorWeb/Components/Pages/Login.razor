@@ -1,29 +1,42 @@
 ﻿@page "/login"
 @rendermode InteractiveServer
-@using Domain.Entities
 @using Application.Interfaces
 @using System.ComponentModel.DataAnnotations
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @layout UserRegisterLayout
+@using Microsoft.AspNetCore.WebUtilities
 
 <h3>Login</h3>
 
-<EditForm Model="@registerModel" OnValidSubmit="Handlelogin">
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">
+        @successMessage
+    </div>
+}
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
     <div class="form-group mb-3">
         <label for="email">Email:</label>
-        <InputText id="email" @bind-Value="registerModel.Email" class="form-control" />
+        <InputText id="email" @bind-Value="loginModel.Email" class="form-control" />
     </div>
 
     <div class="form-group mb-3">
-        <label for="password">Lozinka:</label>
-        <InputText id="password" @bind-Value="registerModel.Password" type="password" class="form-control" />
+        <label for="password">Password:</label>
+        <InputText id="password" @bind-Value="loginModel.Password" type="password" class="form-control" />
     </div>
 
-    <button type="submit" class="btn btn-primary">Login</button>
+    <button type="submit" class="btn btn-primary" disabled="@isLoading">
+        @if (isLoading)
+        {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        Login
+    </button>
 </EditForm>
 
 @if (!string.IsNullOrEmpty(errorMessage))
@@ -34,32 +47,52 @@
 }
 
 @code {
-    private RegisterModel registerModel = new RegisterModel();
+    private LoginModel loginModel = new LoginModel();
     private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isLoading = false;
 
-    private async Task Handlelogin()
+    protected override void OnInitialized()
     {
-        try
+        var url = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (QueryHelpers.ParseQuery(url.Query).TryGetValue("message", out var messageValue))
         {
-            (string userId, string username) = await UserService.Login(registerModel.Email, registerModel.Password);
-            
-            NavigationManager.NavigateTo($"/userLogin?userId={Uri.EscapeDataString(userId)}&username={Uri.EscapeDataString(username)}");
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
+            successMessage = messageValue;
         }
     }
 
-    public class RegisterModel
+    private async Task HandleLogin()
     {
+        isLoading = true;
+        errorMessage = string.Empty;
 
-        [Required(ErrorMessage = "Email je obavezan")]
-        [EmailAddress(ErrorMessage = "Neispravan format emaila")]
+        try
+        {
+            var (userId, username) = await UserService.Login(loginModel.Email, loginModel.Password);
+
+            NavigationManager.NavigateTo($"/userlogin?userId={userId}&username={username}");
+        }
+        catch (ArgumentException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Login error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Lozinka je obavezna")]
+        [Required(ErrorMessage = "Password is required")]
         public string Password { get; set; } = string.Empty;
-
     }
 }

@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Entities;
-using Domain.Interfaces;
+﻿using Domain.Entities;
 
 namespace Application.Interfaces
 {
     public interface IWorkoutPlanService
     {
-        Task<WorkoutPlan> GetWorkoutPlan(WorkoutPlan workoutPlan);
-        Task<WorkoutPlan> GetByUserId(Guid userId);
-        Task<bool> UpdateWorkoutPlan(WorkoutPlan workoutPlan);
-        Task<IEnumerable<WorkoutPlan>> GetAllUserWorkoutPlans(Guid Id);
-        Task<bool> DeleteAsync(Guid id, Guid Id);
+        Task<WorkoutPlan> CreateWorkoutPlan(WorkoutPlan workoutPlan);
+        Task<WorkoutPlan> GetWorkoutPlanById(Guid id);
+        Task<List<WorkoutPlan>> GetByUser(User user);
+        Task<bool> DeleteWorkoutPlan(Guid id);
+
+        Task<List<Workout>> GenerateDailyWorkout(User user, Guid planId);
+        Task<List<Workout>> GetWorkoutHistory(User user, DateOnly? fromDate = null, DateOnly? toDate = null);
     }
 }

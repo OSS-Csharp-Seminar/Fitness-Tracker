@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Entities;
-using Domain.Interfaces;
+﻿using Domain.Entities;
 
 namespace Application.Interfaces
 {
     public interface IUserPhysiqueService
     {
-        Task<UserPhysique> userPhysique(UserPhysique userPhysique);
-        Task<bool> UpdateUserPysique(UserPhysique updateDto);
+        Task<UserPhysique> CreateUserPhysique(UserPhysique userPhysique);
+        Task<decimal> GetWeightProgress(Guid userId);
+        Task<List<UserPhysique>> GetAllPhysiques();
+        Task<List<UserPhysique>> GetByUserId(Guid userId);
+        Task<UserPhysique> GetLatestPhysique(Guid userId);
+        Task<bool> UpdatePhysique(UserPhysique userPhysique);
+        Task<bool> DeletePhysique(Guid id);
     }
 }

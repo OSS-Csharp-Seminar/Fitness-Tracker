@@ -1,80 +1,98 @@
-﻿using BlazorWeb.Components;
+﻿using Application.Interfaces;
+using Application.Services;
+using BlazorWeb.Components;
 using Domain.Entities;
+using Domain.Interfaces;
 using Infrastructure.Data;
+using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
-// Add services to the container.
+
+// Add Razor Components services
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-// Dodavanje SQLite baze podataka
+
+// Add Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add Identity
+builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseSqlite(connectionString, sqliteOptions =>
-    {
-        sqliteOptions.CommandTimeout(60); // Povećan timeout
-    });
-});
-// Dodavanje Identity s GUID-om
-builder.Services.AddIdentity<User, IdentityRole<Guid>>(options => {
-    options.SignIn.RequireConfirmedAccount = false;
+    options.Password.RequireDigit = false;
     options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+    options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
-// Dodavanje autentifikacije i autorizacije
+
+// Add Authentication and Authorization
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
-// Registracija servisa u Program.cs
-builder.Services.AddScoped<Domain.Interfaces.IUserRepository, Infrastructure.Repositories.UserRepository>();
-builder.Services.AddScoped<Application.Interfaces.IUserService, Application.Services.UserService>();
+
+// Register All Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserPhysiqueRepository, UserPhysiqueRepository>();
+builder.Services.AddScoped<IWorkoutPlanRepository, WorkoutPlanRepository>();
+builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
+builder.Services.AddScoped<IWorkoutCatalogRepository, WorkoutCatalogRepository>();
+
+// Register All Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserPhysiqueService, UserPhysiqueService>();
+builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
+builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddScoped<IWorkoutCatalogService, WorkoutCatalogService>();
+
 var app = builder.Build();
-// Automatsko kreiranje baze podataka pri pokretanju
-// Automatsko kreiranje baze podataka i uloga pri pokretanju
+
+// Create database 
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Ovo će kreirati bazu ako ne postoji
         context.Database.EnsureCreated();
-        // Inicijalizacija uloga
+
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-        // Provjera i kreiranje uloga
         string[] roles = new[] { "Admin", "User", "Trainer" };
-        // Koristite Task.Run umjesto await
-        Task.Run(async () =>
+
+        foreach (var role in roles)
         {
-            foreach (var role in roles)
+            if (!await roleManager.RoleExistsAsync(role))
             {
-                if (!await roleManager.RoleExistsAsync(role))
-                {
-                    await roleManager.CreateAsync(new IdentityRole<Guid>(role));
-                }
+                await roleManager.CreateAsync(new IdentityRole<Guid>(role));
             }
-        }).GetAwaiter().GetResult(); // Sinhrono čekanje na rezultat
+        }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Došlo je do greške prilikom stvaranja baze podataka ili inicijalizacije uloga.");
+        logger.LogError(ex, "An error occurred while creating the database or initializing roles.");
     }
 }
-// Configure the HTTP request pipeline.
+
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
-// Dodavanje Authentication i Authorization Middleware
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
 app.Run();

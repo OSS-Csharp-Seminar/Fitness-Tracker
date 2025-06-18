@@ -8,12 +8,12 @@ namespace Domain.Enum
 {
     public enum WorkoutType
     {
-        arms, 
-        legs,
-        inner_thighs,
-        chest,
-        abdominals, 
-        glutes, 
-        back
+        Arms, 
+        Legs,
+        Inner_thighs,
+        Chest,
+        Abdominals, 
+        Glutes, 
+        Back
     }
 }

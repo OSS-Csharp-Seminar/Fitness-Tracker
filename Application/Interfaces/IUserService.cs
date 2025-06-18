@@ -5,9 +5,10 @@ namespace Application.Interfaces
 {
     public interface IUserService
     {
+        Task CheckEmailUsernameAsync(string username, string email);
         Task<User> CreateUserAsync(User user, string password);
-        Task<(string Email, string UserName)> GetUserName_EmailAsync(Guid userId); 
-        Task Check_Email_UsernameAsync(string username, string email);
-        Task<(string userId, string username)> Login(string email, string password);
+        Task<(string UserId, string Username)> Login(string email, string password); // ISPRAVKA
+        Task<User> GetByIdAsync(Guid id);
+
     }
 }

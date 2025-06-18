@@ -1,128 +1,190 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enum;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services
 {
-    internal class WorkoutPlanService : IWorkoutPlanService
+    public class WorkoutPlanService : IWorkoutPlanService
     {
         private readonly IWorkoutPlanRepository _workoutPlanRepository;
+        private readonly IWorkoutService _workoutService;
+        private readonly IWorkoutCatalogService _workoutCatalogService;
+        private readonly Random _random;
 
-        public WorkoutPlanService(IWorkoutPlanRepository workoutPlanRepository)
+        public WorkoutPlanService(
+            IWorkoutPlanRepository workoutPlanRepository,
+            IWorkoutService workoutService,
+            IWorkoutCatalogService workoutCatalogService)
         {
             _workoutPlanRepository = workoutPlanRepository;
+            _workoutService = workoutService;
+            _workoutCatalogService = workoutCatalogService;
+            _random = new Random();
         }
 
-        public async Task<WorkoutPlan> GetWorkoutPlan(WorkoutPlan workoutPlan)
+        public async Task<WorkoutPlan> CreateWorkoutPlan(WorkoutPlan workoutPlan)
         {
             if (workoutPlan == null)
-                throw new ArgumentException("WorkoutPlan cannot be null");
-            if (workoutPlan.Id == Guid.Empty)
-                workoutPlan.Id = Guid.NewGuid();
+                throw new ArgumentNullException(nameof(workoutPlan));
+
+            if (workoutPlan.UserId == Guid.Empty)
+                throw new ArgumentException("User ID is required");
+
+            if (workoutPlan.TrainingDays <= 0 || workoutPlan.TrainingDays > 7)
+                throw new ArgumentException("Training days must be between 1 and 7");
+
+            if (workoutPlan.TargetWeight <= 0)
+                throw new ArgumentException("Target weight must be greater than 0");
+
+            workoutPlan.Id = Guid.NewGuid();
+            workoutPlan.StartDate = DateTime.Now;
 
             return await _workoutPlanRepository.AddAsync(workoutPlan);
         }
 
-        public async Task<WorkoutPlan> GetByUserId(Guid userId)
+        public async Task<WorkoutPlan> GetWorkoutPlanById(Guid id)
         {
-            if (userId == Guid.Empty)
-                throw new ArgumentException("User Id not exists!");
+            if (id == Guid.Empty)
+                throw new ArgumentException("Workout plan ID is required");
 
-            var workutPlan = await _workoutPlanRepository.GetByUserIdAsync(userId);
-
-            if (workutPlan == null)
-                throw new ArgumentException($"The User whit {userId} dont have plan");
-
-            return workutPlan;
+            return await _workoutPlanRepository.GetByIdAsync(id);
         }
 
-        public async Task<bool> UpdateWorkoutPlan(WorkoutPlan workoutPlan)
+        public async Task<List<WorkoutPlan>> GetByUser(User user)
         {
-            try
-            {
-                if (workoutPlan == null)
-                    throw new ArgumentNullException(nameof(workoutPlan));
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
 
-                if (workoutPlan.Id == Guid.Empty)
-                    throw new ArgumentException("WorkoutPlan ID ne može biti prazan", nameof(workoutPlan));
-
-                var existingWorkoutPlan = await _workoutPlanRepository.GetByIdAsync(workoutPlan.Id);
-                if (existingWorkoutPlan == null)
-                    return false;
-
-                if (workoutPlan.MaxCalories != 0)
-                    existingWorkoutPlan.MaxCalories = workoutPlan.MaxCalories;
-
-                if (workoutPlan.BMI != 0)
-                    existingWorkoutPlan.BMI = workoutPlan.BMI;
-
-                if (workoutPlan.WorkoutPlanType != default(WorkoutPlanType))
-                    existingWorkoutPlan.WorkoutPlanType = workoutPlan.WorkoutPlanType;
-
-                if (workoutPlan.TrainingDuration != TimeOnly.FromDateTime(DateTime.MinValue))
-                    existingWorkoutPlan.TrainingDuration = workoutPlan.TrainingDuration;
-
-                if (workoutPlan.TrainingDays != 0)
-                    existingWorkoutPlan.TrainingDays = workoutPlan.TrainingDays;
-
-                if (workoutPlan.TargetWeight != 0)
-                    existingWorkoutPlan.TargetWeight = workoutPlan.TargetWeight;
-
-                return await _workoutPlanRepository.UpdateAsync(existingWorkoutPlan);
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
+            var query = await _workoutPlanRepository.GetByUserAsync(user);
+            return await query.ToListAsync();
         }
 
-        public async Task<IEnumerable<WorkoutPlan>> GetAllUserWorkoutPlans(Guid userId)
+        public async Task<bool> DeleteWorkoutPlan(Guid id)
         {
-            try
-            {
-                if (userId == Guid.Empty)
-                    throw new ArgumentException("UserId can not be emty", nameof(userId));
+            if (id == Guid.Empty)
+                throw new ArgumentException("Workout plan ID is required");
 
-                var workoutPlans = await _workoutPlanRepository.GetAllAsync(userId);
-
-                return workoutPlans;
-            }
-            catch (Exception ex)
-            {
-                throw new ApplicationException($"erroe handling: {ex.Message}", ex);
-            }
+            return await _workoutPlanRepository.DeleteAsync(id);
         }
 
-        public async Task<bool> DeleteAsync(Guid id, Guid userId)
+        public async Task<List<Workout>> GenerateDailyWorkout(User user, Guid planId)
         {
-            try
+            var workoutPlan = await _workoutPlanRepository.GetByIdAsync(planId);
+            if (workoutPlan == null)
+                throw new InvalidOperationException("Workout plan not found");
+
+            if (workoutPlan.UserId != user.Id)
+                throw new UnauthorizedAccessException("This workout plan does not belong to the user");
+
+            if (!await ShouldGenerateNewWorkout(user))
+                return await _workoutService.GetTodayWorkouts(user);
+
+            var exercises = await GetSuitableExercises(workoutPlan);
+            var selectedExercises = SelectExercisesForWorkout(exercises, workoutPlan);
+
+            var workouts = new List<Workout>();
+            var today = DateOnly.FromDateTime(DateTime.Now);
+
+            foreach (var exercise in selectedExercises)
             {
-                if (id == Guid.Empty)
-                    throw new ArgumentException("ID ne može biti prazan", nameof(id));
+                var workout = new Workout
+                {
+                    PlanId = workoutPlan.Id,
+                    CatalogId = exercise.Id,
+                    Date = today,
+                    Duration = TimeSpan.Zero
+                };
 
-                if (userId == Guid.Empty)
-                    throw new ArgumentException("UserId ne može biti prazan", nameof(userId));
-
-                var userWorkoutPlans = await _workoutPlanRepository.GetAllAsync(userId);
-
-                var planToDelete = userWorkoutPlans.FirstOrDefault(wp => wp.Id == id);
-
-                if (planToDelete == null)
-                    throw new ArgumentException("The workout plan does not exist for this user!");
-
-                return await _workoutPlanRepository.DeleteAsync(id);
+                workouts.Add(await _workoutService.CreateWorkout(workout));
             }
-            catch (Exception ex)
-            {
-                return false;
-            }
+
+            return workouts;
         }
 
+        public async Task<List<Workout>> GetWorkoutHistory(User user, DateOnly? fromDate = null, DateOnly? toDate = null)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            var workouts = await _workoutService.GetCompletedWorkouts(user);
+
+            if (fromDate.HasValue)
+                workouts = workouts.Where(w => w.Date >= fromDate.Value).ToList();
+
+            if (toDate.HasValue)
+                workouts = workouts.Where(w => w.Date <= toDate.Value).ToList();
+
+            return workouts.OrderByDescending(w => w.Date).ToList();
+        }
+
+        public async Task<bool> ShouldGenerateNewWorkout(User user)
+        {
+            var todayWorkouts = await _workoutService.GetTodayWorkouts(user);
+
+            if (!todayWorkouts.Any())
+                return true;
+
+            if (todayWorkouts.Any(w => w.Completed))
+            {
+                var lastCompletedDate = todayWorkouts.Max(w => w.Date);
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                return lastCompletedDate < today;
+            }
+
+            return false;
+        }
+
+        public async Task<int> CalculateExpectedDuration(WorkoutPlan workoutPlan)
+        {
+            if (workoutPlan == null)
+                throw new ArgumentNullException(nameof(workoutPlan));
+
+            return workoutPlan.TrainingDuration.Hour * 60 + workoutPlan.TrainingDuration.Minute;
+        }
+
+        private async Task<List<WorkoutCatalog>> GetSuitableExercises(WorkoutPlan workoutPlan)
+        {
+            if (workoutPlan.WorkoutPreference.Any())
+            {
+                return await _workoutCatalogService.GetByWorkoutType(workoutPlan.WorkoutPreference);
+            }
+
+            return await _workoutCatalogService.GetAllExercises();
+        }
+
+        private List<WorkoutCatalog> SelectExercisesForWorkout(List<WorkoutCatalog> availableExercises, WorkoutPlan workoutPlan)
+        {
+            if (!availableExercises.Any())
+                return new List<WorkoutCatalog>();
+
+            var targetDurationMinutes = CalculateExpectedDuration(workoutPlan).Result;
+            const int maxExerciseDuration = 3;
+            var numberOfExercises = (int)Math.Ceiling((double)targetDurationMinutes / maxExerciseDuration);
+            numberOfExercises = Math.Max(2, Math.Min(20, numberOfExercises));
+
+            var selectedExercises = availableExercises
+                .OrderBy(x => _random.Next())
+                .Take(numberOfExercises)
+                .ToList();
+
+            var totalCaloriesBurned = CalculateTotalCalories(selectedExercises, targetDurationMinutes, numberOfExercises);
+
+            return selectedExercises;
+        }
+
+        private int CalculateTotalCalories(List<WorkoutCatalog> exercises, int totalDurationMinutes, int numberOfExercises)
+        {
+            var minutesPerExercise = (double)totalDurationMinutes / numberOfExercises;
+            var totalCalories = 0;
+
+            foreach (var exercise in exercises)
+            {
+                totalCalories += (int)(exercise.CaloriesBurned * minutesPerExercise);
+            }
+
+            return totalCalories;
+        }
     }
 }

@@ -1,90 +1,60 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    internal class WorkoutPlanRepository : IWorkoutPlanRepository
+    public class WorkoutPlanRepository : BaseRepository<WorkoutPlan>, IWorkoutPlanRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public WorkoutPlanRepository(ApplicationDbContext context)
+        public WorkoutPlanRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public async Task<WorkoutPlan> AddAsync(WorkoutPlan workoutPlan)
+        public async Task<IQueryable<WorkoutPlan>> GetByUserAsync(User user)
         {
-            await _context.WorkoutPlans.AddAsync(workoutPlan);
-            await _context.SaveChangesAsync();
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
 
-            return workoutPlan;
+            var query = _context.Set<WorkoutPlan>()
+                .Where(wp => wp.UserId == user.Id)
+                .Include(wp => wp.User)
+                .Include(wp => wp.Workouts)
+                .OrderByDescending(wp => wp.StartDate);
+
+            return query;
         }
 
-        public async Task<WorkoutPlan> GetByIdAsync(Guid id)
+        public async Task<bool> HasActiveWorkoutPlanAsync(User user)
         {
-            return await _context.WorkoutPlans
-                .Include(x => x.Id)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
 
-        }
-
-        public async Task<WorkoutPlan> GetByUserIdAsync(Guid userId)
-        {
-            return await _context.WorkoutPlans
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.UserId)
+            var activePlan = await _context.WorkoutPlans
+                .Where(wp => wp.UserId == user.Id)
                 .FirstOrDefaultAsync();
+
+            return activePlan != null;
+        } 
+      
+
+        public override async Task<WorkoutPlan> GetByIdAsync(Guid id)
+        {
+            return await _context.Set<WorkoutPlan>()
+                .Include(wp => wp.User)
+                .Include(wp => wp.Workouts)
+                    .ThenInclude(w => w.WorkoutCatalog)
+                .FirstOrDefaultAsync(wp => wp.Id == id);
         }
 
-        public async Task<bool> UpdateAsync(WorkoutPlan workoutPlan)
+        public override async Task<IEnumerable<WorkoutPlan>> GetAllAsync()
         {
-            try
-            {
-                _context.WorkoutPlans.Update(workoutPlan);
-                int affectiveRows = await _context.SaveChangesAsync();
-
-                return affectiveRows > 0;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-        }
-
-        public async Task<IEnumerable<WorkoutPlan>> GetAllAsync(Guid userId)
-        {
-            return await _context.WorkoutPlans
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.Id) 
+            return await _context.Set<WorkoutPlan>()
+                .Include(wp => wp.User)
+                .Include(wp => wp.Workouts)
+                .OrderByDescending(wp => wp.StartDate)
                 .ToListAsync();
         }
-
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            var workoutPlan = await _context.WorkoutPlans.FindAsync(id);
-            if (workoutPlan != null)
-                throw new ArgumentException("The workout do not exists!");
-
-            try
-            {
-                _context.WorkoutPlans.Remove(workoutPlan);
-                int affectiveRows = await _context.SaveChangesAsync();
-
-                return affectiveRows > 0;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-
-        }
-
     }
 }

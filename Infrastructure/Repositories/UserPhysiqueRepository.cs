@@ -1,59 +1,58 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Domain.Entities;
 using Domain.Interfaces;
-using Domain.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class UserPhysiqueRepository : IUserPhysiqueRepository
+    public class UserPhysiqueRepository : BaseRepository<UserPhysique>, IUserPhysiqueRepository
     {
-        private readonly ApplicationDbContext _context;
+        public UserPhysiqueRepository(ApplicationDbContext context) : base(context) { }
 
-        public UserPhysiqueRepository(ApplicationDbContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<UserPhysique> AddAsync(UserPhysique userPhysique)
-        {
-            await _context.AddAsync(userPhysique);
-            await _context.SaveChangesAsync();
-
-            return userPhysique;    
-        }
-        public async Task<UserPhysique> GetById(Guid id)
+        public override async Task<UserPhysique> GetByIdAsync(Guid id)
         {
             return await _context.UserPhysiques
-                .Include(p => p.User) 
-                .FirstOrDefaultAsync(up => up.Id == id);
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<IEnumerable<UserPhysique>> GetByUerId(Guid id)
+        public override async Task<IEnumerable<UserPhysique>> GetAllAsync()
         {
             return await _context.UserPhysiques
-                .Where(up => up.UserId == id)
-                .OrderByDescending(up => up.Id) 
+                .Include(x => x.User)
+                .OrderByDescending(x => x.Date)
                 .ToListAsync();
         }
-
-        public async Task<bool> UpdateAsync(UserPhysique userPhysique)
+        public async Task<IQueryable<UserPhysique>> GetByUserId(Guid id)
         {
-            try
-            {
-                _context.UserPhysiques.Update(userPhysique);
-                int affectiveRiws = await _context.SaveChangesAsync();
+            var query = _context.UserPhysiques
+                .Include(x => x.User)
+                .Where(x => x.Id == id)
+                .OrderByDescending(x => x.UserId);
 
-                return affectiveRiws > 0;     
-            }
-            catch (Exception ex) { 
-                return false;
-            }
+            return await Task.FromResult(query);
+        }
 
+        public async Task<UserPhysique> GetLatestAsync(User user)
+        {
+            return await _context.UserPhysiques
+                .Where(x => x.User == user)
+                .OrderByDescending(x => x.Date)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<decimal> GetWeightProgressAsync(Guid userId, int days = 30)
+        {
+            var lastTwoDartes = await _context.UserPhysiques
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Date)
+                .Take(2)
+                .ToListAsync();
+
+            var lastWeight = lastTwoDartes[0].Weight;
+            var previousWeight = lastTwoDartes[1].Weight;
+
+            return (decimal)(lastWeight - previousWeight);
         }
     }
 }

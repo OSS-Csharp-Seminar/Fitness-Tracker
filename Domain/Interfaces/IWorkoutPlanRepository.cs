@@ -1,19 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Entities;
+﻿using Domain.Entities;
 
 namespace Domain.Interfaces
 {
-    public interface IWorkoutPlanRepository
+    public interface IWorkoutPlanRepository : IBaseRepository<WorkoutPlan>
     {
-        Task<WorkoutPlan> AddAsync(WorkoutPlan workoutPlan);
-        Task<WorkoutPlan> GetByIdAsync(Guid id);
-        Task<WorkoutPlan> GetByUserIdAsync(Guid userId);
-        Task<bool> UpdateAsync(WorkoutPlan workoutPlan);
-        Task<IEnumerable<WorkoutPlan>> GetAllAsync(Guid userId);
-        Task<bool> DeleteAsync(Guid id);
+        Task<IQueryable<WorkoutPlan>> GetByUserAsync(User user);
+        Task<bool> HasActiveWorkoutPlanAsync(User user);
     }
 }

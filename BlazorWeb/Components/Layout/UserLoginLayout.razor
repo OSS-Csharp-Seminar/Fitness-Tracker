@@ -1,11 +1,9 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Web
 <PageTitle>PushApps - Fitness aplikacija</PageTitle>
-
 <HeadContent>
-    <link rel="stylesheet" href="~/userLogin.css" />
+    <link rel="stylesheet" href="/userlogin1.css" />
 </HeadContent>
-
 <div class="hero-page">
     <div class="nav-container">
         <nav class="navbar">
@@ -13,23 +11,196 @@
                 <a href="/">PushApps</a>
             </div>
             <div class="navbar-links">
-                <a href="/login" class="nav-link">MY PLAN</a>
-                <a href="/login" class="nav-link">WORKOUTS</a>
-                <a href="/login" class="nav-link">MEALS</a>
-                <a href="/register" class="nav-link">MY PROFILE</a>
+                <a href="/my-plan" class="nav-link @GetMainActiveClass("my-plan")">MY PLAN</a>
+                <a href="/workouts" class="nav-link @GetMainActiveClass("workouts")">WORKOUTS</a>
+                <a href="/meals" class="nav-link @GetMainActiveClass("meals")">MEALS</a>
+                <a href="/profile" class="nav-link @GetMainActiveClass("profile")">MY PROFILE</a>
             </div>
         </nav>
     </div>
-    <div class="main-content">
-        @Body
+
+    <div class="content-wrapper">
+        <div class="sidebar">
+            <h4 class="sidebar-title">@GetSidebarTitle()</h4>
+            <ul class="sidebar-menu">
+                @if (CurrentSection == "my-plan")
+                {
+                    <li class="sidebar-item">
+                        <a href="/my-plan/dashboard" class="sidebar-link @GetActiveClass("/my-plan/dashboard")">
+                            There will a list of navigation to page
+                        </a>
+                    </li>
+                   @*  <li class="sidebar-item">
+                        <a href="/my-plan/current-plan" class="sidebar-link @GetActiveClass("/my-plan/current-plan")">
+                            Current Plan
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/my-plan/progress" class="sidebar-link @GetActiveClass("/my-plan/progress")">
+                            Progress Tracking
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/my-plan/statistics" class="sidebar-link @GetActiveClass("/my-plan/statistics")">
+                            Statistics
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/my-plan/goals" class="sidebar-link @GetActiveClass("/my-plan/goals")">
+                            Goals
+                        </a>
+                    </li> *@
+                }
+                else if (CurrentSection == "workouts")
+                {
+                    <li class="sidebar-item">
+                        <a href="/workouts/today" class="sidebar-link @GetActiveClass("/workouts/today")">
+                            Today's Workout
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/workouts/library" class="sidebar-link @GetActiveClass("/workouts/library")">
+                            Exercise Library
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/workouts/history" class="sidebar-link @GetActiveClass("/workouts/history")">
+                            Workout History
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/workouts/create" class="sidebar-link @GetActiveClass("/workouts/create")">
+                            Create Workout
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/workouts/schedule" class="sidebar-link @GetActiveClass("/workouts/schedule")">
+                            Schedule
+                        </a>
+                    </li>
+                }
+                else if (CurrentSection == "meals")
+                {
+                    <li class="sidebar-item">
+                        <a href="/meals/today" class="sidebar-link @GetActiveClass("/meals/today")">
+                            Today's Meals
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/meals/add" class="sidebar-link @GetActiveClass("/meals/add")">
+                            Add Meal
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/meals/history" class="sidebar-link @GetActiveClass("/meals/history")">
+                            Meal History
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/meals/recipes" class="sidebar-link @GetActiveClass("/meals/recipes")">
+                            Recipes
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/meals/nutrition" class="sidebar-link @GetActiveClass("/meals/nutrition")">
+                            Nutrition Tracker
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/meals/shopping" class="sidebar-link @GetActiveClass("/meals/shopping")">
+                            Shopping List
+                        </a>
+                    </li>
+                }
+                else if (CurrentSection == "profile")
+                {
+                    <li class="sidebar-item">
+                        <a href="/profile/personal" class="sidebar-link @GetActiveClass("/profile/personal")">
+                            Personal Info
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/profile/physical" class="sidebar-link @GetActiveClass("/profile/physical")">
+                            Physical Data
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/profile/preferences" class="sidebar-link @GetActiveClass("/profile/preferences")">
+                            Preferences
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/profile/account" class="sidebar-link @GetActiveClass("/profile/account")">
+                            Account Settings
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="/profile/notifications" class="sidebar-link @GetActiveClass("/profile/notifications")">
+                            Notifications
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="main-content">
+            @Body
+        </div>
     </div>
 </div>
-<footer class="nav-container">
 
+<footer class="nav-container">
 </footer>
+
 @code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    private string CurrentSection
+    {
+        get
+        {
+            var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+            if (currentPath.StartsWith("my-plan"))
+                return "my-plan";
+            else if (currentPath.StartsWith("workouts"))
+                return "workouts";
+            else if (currentPath.StartsWith("meals"))
+                return "meals";
+            else if (currentPath.StartsWith("profile"))
+                return "profile";
+
+            return "my-plan"; // default
+        }
+    }
+
+    private string GetSidebarTitle()
+    {
+        return CurrentSection switch
+        {
+            "my-plan" => "My Plan",
+            "workouts" => "Workouts",
+            "meals" => "Meals",
+            "profile" => "Profile",
+            _ => "Navigation"
+        };
+    }
+
+    private string GetActiveClass(string path)
+    {
+        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        return currentPath.StartsWith(path.TrimStart('/')) ? "active" : "";
+    }
+
+    private string GetMainActiveClass(string section)
+    {
+        return CurrentSection == section ? "active" : "";
+    }
+
     [Parameter]
     public RenderFragment LeftContent { get; set; }
+
     [Parameter]
     public RenderFragment RightContent { get; set; }
 }
