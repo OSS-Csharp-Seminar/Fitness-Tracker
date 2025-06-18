@@ -23,12 +23,10 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IQueryable<WorkoutCatalog>> GetByWorkoutTypeAsync(List<WorkoutType> preferences)
+        public async Task<IEnumerable<WorkoutCatalog>> GetByWorkoutTypeAsync(List<WorkoutType> preferences)
         {
-            var query = _context.WorkoutCatalogs
-                .Where(x => x.tag.Any(tag => preferences.Contains(tag)))
-                .OrderBy(x => x.WorkoutName);
-            return await Task.FromResult(query);
+            var allWorkouts = await _context.WorkoutCatalogs.ToListAsync();
+            return allWorkouts.Where(w => w.tag.Any(t => preferences.Contains(t)));
         }
 
         public async Task<IQueryable<WorkoutCatalog>> SearchByNameAsync(string searchTerm)

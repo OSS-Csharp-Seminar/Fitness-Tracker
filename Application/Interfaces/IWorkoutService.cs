@@ -15,5 +15,6 @@ namespace Application.Interfaces
         Task<bool> UpdateWorkout(Workout workout);
         Task<bool> DeleteWorkout(Guid id);
         Task<int> GetTodayCompletedCount(User user);
+        Task<List<Workout>> GetByDateAsync(DateOnly date);
     }
 }

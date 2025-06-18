@@ -1,0 +1,456 @@
+﻿@page "/workouts/training-history"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enum
+@inject IWorkoutService WorkoutService
+@inject IWorkoutCatalogService WorkoutCatalogService
+@inject IWorkoutPlanService WorkoutPlanService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>Training History - PushApps</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h3 style="color:black; font-weight:bold">Training History</h3>
+        <p class="text-muted">All your completed workouts</p>
+
+        <!-- DEBUG INFO -->
+        <div class="alert alert-info">
+            <h6>DEBUG INFO:</h6>
+            <p><strong>Current URL:</strong> @NavigationManager.Uri</p>
+            <p><strong>UserId Parameter:</strong> '@UserId'</p>
+            <p><strong>UserName Parameter:</strong> '@UserName'</p>
+            <p><strong>Current User:</strong> @(currentUser?.UserName ?? "NULL")</p>
+            <p><strong>Loading:</strong> @isLoading</p>
+            <p><strong>Error:</strong> @errorMessage</p>
+        </div>
+    </div>
+</div>
+
+<!-- SEARCH/FILTER SECTION -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 style="color:black; font-weight:bold"><i class="fas fa-search"></i> Search & Filter</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="fromDate" class="form-label">From Date:</label>
+                        <input type="date" id="fromDate" @bind="fromDateFilter" class="form-control" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="toDate" class="form-label">To Date:</label>
+                        <input type="date" id="toDate" @bind="toDateFilter" class="form-control" />
+                    </div>
+                    <div class="col-md-4 mb-3 d-flex align-items-end">
+                        <div class="btn-group w-100">
+                            <button class="btn btn-primary" @onclick="ApplyFilter">
+                                <i class="fas fa-filter"></i> Apply Filter
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ClearFilter">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUICK FILTERS -->
+                <div class="row">
+                    <div class="col-12">
+                        <label class="form-label">Quick Filters:</label>
+                        <div class="btn-group flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => SetQuickFilter(7)">
+                                Last 7 Days
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => SetQuickFilter(30)">
+                                Last 30 Days
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => SetQuickFilter(90)">
+                                Last 3 Months
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="ShowAllWorkouts">
+                                All Time
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LOADING/ERROR STATES -->
+@if (isLoading)
+{
+    <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading your training history...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <h5>Error</h5>
+        <p>@errorMessage</p>
+        <button class="btn btn-primary" @onclick="LoadHistory">Reload</button>
+    </div>
+}
+else if (!completedWorkouts.Any())
+{
+    <div class="alert alert-warning text-center">
+        <h5><i class="fas fa-history"></i> No Training History</h5>
+        <p>You haven't completed any workouts yet. Start training to build your history!</p>
+        <button class="btn btn-primary" @onclick="GoToTraining">
+            Start Training Now
+        </button>
+    </div>
+}
+else
+{
+    <!-- STATISTICS SUMMARY -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>@completedWorkouts.Count</h3>
+                    <p class="mb-0">Total Workouts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>@uniqueExercises</h3>
+                    <p class="mb-0">Different Exercises</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3>@totalDurationFormatted</h3>
+                    <p class="mb-0">Total Duration</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3>@totalCaloriesBurned</h3>
+                    <p class="mb-0">Calories Burned</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WORKOUTS LIST -->
+    <div class="row">
+        <div class="col-12">
+            <h4 style="color:black; font-weight:bold">
+                Completed Workouts
+                @if (hasActiveFilter)
+                {
+                    <span class="badge bg-secondary">Filtered Results</span>
+                }
+            </h4>
+        </div>
+    </div>
+
+    <!-- GROUP BY DATE -->
+    @foreach (var dateGroup in groupedWorkouts)
+    {
+        <div class="mb-4">
+            <h5 class="border-bottom pb-2">
+                <i class="fas fa-calendar-day"></i>
+                @dateGroup.Key.ToString("dddd, MMMM dd, yyyy")
+                <span class="badge bg-primary ms-2">@dateGroup.Count() exercises</span>
+            </h5>
+
+            <div class="row">
+                @foreach (var workout in dateGroup)
+                {
+                    var exercise = workoutCatalogItems.FirstOrDefault(e => e.Id == workout.CatalogId);
+
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <!-- EXERCISE IMAGE -->
+                                <div class="text-center mb-3">
+                                    @if (!string.IsNullOrEmpty(exercise?.ImageUrl))
+                                    {
+                                        <img src="@exercise.ImageUrl"
+                                             alt="@exercise.WorkoutName"
+                                             class="img-fluid rounded"
+                                             style="max-height: 120px; max-width: 100%; object-fit: cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                             style="height: 120px; width: 100%;">
+                                            <i class="fas fa-dumbbell fa-3x text-muted"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- EXERCISE INFO -->
+                                <h6 class="card-title text-center">
+                                    @(exercise?.WorkoutName ?? "Exercise")
+                                </h6>
+
+                                <!-- WORKOUT DETAILS -->
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Duration</small>
+                                        <strong>@workout.Duration.ToString(@"mm\:ss")</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Calories</small>
+                                        <strong>@(exercise?.CaloriesBurned ?? 0)</strong>
+                                    </div>
+                                </div>
+
+                                <!-- EXERCISE TAGS -->
+                                @if (exercise?.tag?.Any() == true)
+                                {
+                                    <div class="text-center mt-2">
+                                        @foreach (var tag in exercise.tag.Take(3))
+                                        {
+                                            <span class="badge bg-secondary me-1">@GetWorkoutTypeDisplayName(tag)</span>
+                                        }
+                                    </div>
+                                }
+
+                                <!-- COMPLETION STATUS -->
+                                <div class="text-center mt-2">
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private List<Workout> completedWorkouts = new List<Workout>();
+    private List<WorkoutCatalog> workoutCatalogItems = new List<WorkoutCatalog>();
+    private User currentUser = null;
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+
+    // FILTER VARIABLES
+    private DateTime? fromDateFilter = null;
+    private DateTime? toDateFilter = null;
+    private bool hasActiveFilter = false;
+
+    // STATISTICS
+    private int uniqueExercises = 0;
+    private string totalDurationFormatted = "0:00";
+    private int totalCaloriesBurned = 0;
+
+    // GROUPED DATA
+    private IEnumerable<IGrouping<DateOnly, Workout>> groupedWorkouts = new List<IGrouping<DateOnly, Workout>>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Ne pozivaj LoadUserAndHistory ovdje - parametri još nisu postavljeni
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Pozovi tek kada su parametri postavljeni
+        await LoadUserAndHistory();
+    }
+
+    private async Task LoadUserAndHistory()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // DEBUG: Provjeri što dolazi iz URL-a
+            var currentUrl = NavigationManager.Uri;
+            Console.WriteLine($"Current URL: {currentUrl}");
+            Console.WriteLine($"UserId parameter: {UserId}");
+            Console.WriteLine($"UserName parameter: {UserName}");
+
+            // DOHVATI KORISNIKA
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                Console.WriteLine($"Using UserId from parameter: {UserId}");
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            else
+            {
+                Console.WriteLine("Trying to get parameters from URL query");
+                var uri = new Uri(NavigationManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+                Console.WriteLine($"Query parameters count: {query.Count}");
+                foreach (var param in query)
+                {
+                    Console.WriteLine($"Query param: {param.Key} = {param.Value}");
+                }
+
+                if (query.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out userGuid))
+                {
+                    Console.WriteLine($"Found userId in query: {userIdValue}");
+                    currentUser = await UserService.GetByIdAsync(userGuid);
+                }
+                else
+                {
+                    Console.WriteLine("No valid userId found in URL");
+                    errorMessage = "User not found. Please log in again.";
+                    return;
+                }
+            }
+
+            Console.WriteLine($"Current user loaded: {currentUser?.UserName}");
+            await LoadHistory();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in LoadUserAndHistory: {ex.Message}");
+            errorMessage = $"Error loading user data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// GLAVNA METODA ZA DOHVAĆANJE POVIJESTI
+    /// </summary>
+    private async Task LoadHistory()
+    {
+        if (currentUser == null) return;
+
+        try
+        {
+            DateOnly? fromDate = fromDateFilter.HasValue ? DateOnly.FromDateTime(fromDateFilter.Value) : null;
+            DateOnly? toDate = toDateFilter.HasValue ? DateOnly.FromDateTime(toDateFilter.Value) : null;
+
+            // DOHVATI COMPLETED WORKOUTS SA FILTEROM
+            completedWorkouts = await WorkoutPlanService.GetWorkoutHistory(currentUser, fromDate, toDate);
+
+            // DOHVATI EXERCISE DETAILS
+            await LoadExerciseDetails();
+
+            // IZRAČUNAJ STATISTIKE
+            CalculateStatistics();
+
+            // GRUPIRAJ PO DATUMU (najnoviji prvi)
+            groupedWorkouts = completedWorkouts
+                .GroupBy(w => w.Date)
+                .OrderByDescending(g => g.Key);
+
+            hasActiveFilter = fromDateFilter.HasValue || toDateFilter.HasValue;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading training history: {ex.Message}";
+        }
+    }
+
+    private async Task LoadExerciseDetails()
+    {
+        var catalogIds = completedWorkouts.Select(w => w.CatalogId).Distinct().ToList();
+        workoutCatalogItems = new List<WorkoutCatalog>();
+
+        foreach (var catalogId in catalogIds)
+        {
+            var exercise = await WorkoutCatalogService.GetExerciseById(catalogId);
+            if (exercise != null)
+            {
+                workoutCatalogItems.Add(exercise);
+            }
+        }
+    }
+
+    private void CalculateStatistics()
+    {
+        // UNIQUE EXERCISES
+        uniqueExercises = completedWorkouts.Select(w => w.CatalogId).Distinct().Count();
+
+        // TOTAL DURATION
+        var totalDuration = completedWorkouts.Sum(w => w.Duration.TotalMinutes);
+        var hours = (int)(totalDuration / 60);
+        var minutes = (int)(totalDuration % 60);
+        totalDurationFormatted = $"{hours}:{minutes:D2}h";
+
+        // TOTAL CALORIES
+        totalCaloriesBurned = completedWorkouts.Sum(w =>
+        {
+            var exercise = workoutCatalogItems.FirstOrDefault(e => e.Id == w.CatalogId);
+            return exercise?.CaloriesBurned ?? 0;
+        });
+    }
+
+    /// <summary>
+    /// FILTER METHODS
+    /// </summary>
+    private async Task ApplyFilter()
+    {
+        await LoadHistory();
+    }
+
+    private async Task ClearFilter()
+    {
+        fromDateFilter = null;
+        toDateFilter = null;
+        hasActiveFilter = false;
+        await LoadHistory();
+    }
+
+    private async Task SetQuickFilter(int days)
+    {
+        toDateFilter = DateTime.Now;
+        fromDateFilter = DateTime.Now.AddDays(-days);
+        await LoadHistory();
+    }
+
+    private async Task ShowAllWorkouts()
+    {
+        await ClearFilter();
+    }
+
+    private void GoToTraining()
+    {
+        var url = $"/workouts/daily-training?userId={currentUser?.Id}&userName={UserName}";
+        NavigationManager.NavigateTo(url);
+    }
+
+    private string GetWorkoutTypeDisplayName(WorkoutType workoutType)
+    {
+        return workoutType switch
+        {
+            WorkoutType.Arms => "Arms",
+            WorkoutType.Legs => "Legs",
+            WorkoutType.Inner_thighs => "Inner Thighs",
+            WorkoutType.Chest => "Chest",
+            WorkoutType.Abdominals => "Abdominals",
+            WorkoutType.Glutes => "Glutes",
+            WorkoutType.Back => "Back",
+            _ => workoutType.ToString()
+        };
+    }
+}

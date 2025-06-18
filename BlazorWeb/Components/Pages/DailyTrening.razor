@@ -1,0 +1,378 @@
+﻿@page "/workouts/daily-training"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enum
+@inject IWorkoutService WorkoutService
+@inject IWorkoutCatalogService WorkoutCatalogService
+@inject IWorkoutPlanService WorkoutPlanService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>Daily Training - PushApps</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h3 style="color:black; font-weight:bold">Today's Training</h3>
+        <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+
+        @if (todayWorkouts.Any())
+        {
+            <div class="alert alert-info">
+                <strong>Progress:</strong> @todayWorkouts.Count(w => w.Completed) of @todayWorkouts.Count exercises completed
+            </div>
+
+            @if (todayWorkouts.All(w => w.Completed))
+            {
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> All exercises completed for today!
+                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="GenerateNewWorkout">
+                        Generate Tomorrow's Workout
+                    </button>
+                </div>
+            }
+        }
+        else if (!isLoading && !string.IsNullOrEmpty(noWorkoutMessage))
+        {
+            <div class="alert alert-warning">
+                <h5>@noWorkoutMessage</h5>
+                @if (hasActivePlan)
+                {
+                    <button class="btn btn-primary" @onclick="GenerateNewWorkout">Generate Today's Workout</button>
+                }
+                else
+                {
+                    <p>You need to create a workout plan first.</p>
+                    <button class="btn btn-success" @onclick="NavigateToCreatePlan">Create Workout Plan</button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>@loadingMessage</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <h5>Error</h5>
+        <p>@errorMessage</p>
+        <button class="btn btn-primary" @onclick="LoadTodayWorkouts">Reload</button>
+    </div>
+}
+else if (todayWorkouts.Any())
+{
+    <div class="row">
+        @foreach (var workout in todayWorkouts)
+        {
+            var exercise = workoutCatalogItems.FirstOrDefault(e => e.Id == workout.CatalogId);
+
+            <div class="col-12 mb-4">
+                <div class="card @(workout.Completed ? "border-success" : "border-primary")">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                @if (!string.IsNullOrEmpty(exercise?.ImageUrl))
+                                {
+                                    <img src="@exercise.ImageUrl" alt="@exercise.WorkoutName" class="img-fluid rounded" style="max-height: 100px; max-width: 100px;" />
+                                }
+                                else
+                                {
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 300px; width: 300px;">
+                                        <i class="fas fa-dumbbell fa-2x text-muted"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="col-md-8">
+                                <h5 style="color:black; font-weight:bold" class="card-title @(workout.Completed ? "text-decoration-line-through text-muted" : "")">
+                                    @(exercise?.WorkoutName ?? "Exercise")
+                                </h5>
+                                <p class="card-text text-muted">
+                                    @(exercise?.Description ?? "No description available")
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i>
+                                            Duration: @workout.Duration.ToString(@"mm\:ss") min
+                                        </small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted">
+                                            <i class="fas fa-fire"></i>
+                                            Calories: @(exercise?.CaloriesBurned ?? 0) kcal
+                                        </small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        @if (exercise?.tag?.Any() == true)
+                                        {
+                                            @foreach (var tag in exercise.tag.Take(2))
+                                            {
+                                                <span class="badge bg-secondary me-1">@GetWorkoutTypeDisplayName(tag)</span>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-2 text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           checked="@workout.Completed"
+                                           @onchange="@((e) => ToggleWorkoutComplete(workout.Id, (bool)e.Value))"
+                                           style="transform: scale(1.5);" />
+                                    <label class="form-check-label">
+                                        @if (workout.Completed)
+                                        {
+                                            <span class="text-success"><i class="fas fa-check-circle"></i> Completed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-primary">Mark Complete</span>
+                                        }
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (todayWorkouts.All(w => w.Completed))
+    {
+        <div class="alert alert-success text-center">
+            <h4><i class="fas fa-trophy"></i> Congratulations!</h4>
+            <p>You've completed all your workouts for today! Great job! 🎉</p>
+            <div class="mt-3">
+                <button class="btn btn-primary" @onclick="ViewWorkoutHistory">View Workout History</button>
+                <button class="btn btn-outline-primary ms-2" @onclick="GenerateNewWorkout">Preview Tomorrow's Workout</button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private List<Workout> todayWorkouts = new List<Workout>();
+    private List<WorkoutCatalog> workoutCatalogItems = new List<WorkoutCatalog>();
+    private User currentUser = null;
+    private bool isLoading = true;
+    private bool hasActivePlan = false;
+    private string errorMessage = string.Empty;
+    private string loadingMessage = "Loading your workout...";
+    private string noWorkoutMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserAndWorkouts();
+    }
+
+    private async Task LoadUserAndWorkouts()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        loadingMessage = "Loading your workout...";
+
+        try
+        {
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            else
+            {
+                var uri = new Uri(NavigationManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+                if (query.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out userGuid))
+                {
+                    currentUser = await UserService.GetByIdAsync(userGuid);
+                }
+                else
+                {
+                    errorMessage = "User not found. Please log in again.";
+                    return;
+                }
+            }
+
+            await CheckForActivePlan();
+            await LoadTodayWorkouts();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading user data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task CheckForActivePlan()
+    {
+        if (currentUser == null) return;
+
+        try
+        {
+            var userPlans = await WorkoutPlanService.GetByUser(currentUser);
+            hasActivePlan = userPlans.Any();
+        }
+        catch (Exception)
+        {
+            hasActivePlan = false;
+        }
+    }
+
+    private async Task LoadTodayWorkouts()
+    {
+        if (currentUser == null) return;
+
+        try
+        {
+            loadingMessage = "Checking for today's workouts...";
+
+            // Koristi novi servis za dohvaćanje ili generiranje treninzima
+            todayWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
+
+            if (!todayWorkouts.Any())
+            {
+                if (!hasActivePlan)
+                {
+                    noWorkoutMessage = "No active workout plan found.";
+                }
+                else
+                {
+                    noWorkoutMessage = "No workout scheduled for today. This might be a rest day.";
+                }
+                return;
+            }
+
+            // Dohvati informacije o vježbama
+            loadingMessage = "Loading exercise details...";
+            var catalogIds = todayWorkouts.Select(w => w.CatalogId).Distinct().ToList();
+            workoutCatalogItems = new List<WorkoutCatalog>();
+
+            foreach (var catalogId in catalogIds)
+            {
+                var exercise = await WorkoutCatalogService.GetExerciseById(catalogId);
+                if (exercise != null)
+                {
+                    workoutCatalogItems.Add(exercise);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading workouts: {ex.Message}";
+        }
+    }
+
+    private async Task ToggleWorkoutComplete(Guid workoutId, bool isCompleted)
+    {
+        try
+        {
+            if (isCompleted)
+            {
+                // Određeni zadana trajanje na temelju workout-a
+                var workout = todayWorkouts.FirstOrDefault(w => w.Id == workoutId);
+                var duration = workout?.Duration ?? TimeSpan.FromMinutes(5);
+
+                await WorkoutService.MarkAsCompleted(workoutId, duration);
+            }
+            else
+            {
+                // Ažuriraj workout kao nezavršen
+                var workout = todayWorkouts.FirstOrDefault(w => w.Id == workoutId);
+                if (workout != null)
+                {
+                    workout.Completed = false;
+                    await WorkoutService.UpdateWorkout(workout);
+                }
+            }
+
+            await LoadTodayWorkouts();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating workout: {ex.Message}";
+        }
+    }
+
+    private async Task GenerateNewWorkout()
+    {
+        if (currentUser == null) return;
+
+        isLoading = true;
+        loadingMessage = "Generating new workout...";
+        errorMessage = string.Empty;
+
+        try
+        {
+            todayWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
+
+            if (todayWorkouts.Any())
+            {
+                await LoadTodayWorkouts();
+                noWorkoutMessage = string.Empty;
+            }
+            else
+            {
+                noWorkoutMessage = "Unable to generate workout. Please check your workout plan.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error generating workout: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateToCreatePlan()
+    {
+        var planUrl = $"/plan?userId={currentUser?.Id}&userName={currentUser?.UserName}";
+        NavigationManager.NavigateTo(planUrl);
+    }
+
+    private void ViewWorkoutHistory()
+    {
+        var historyUrl = $"/workouts/history?userId={currentUser?.Id}&userName={currentUser?.UserName}";
+        NavigationManager.NavigateTo(historyUrl);
+    }
+
+    private string GetWorkoutTypeDisplayName(WorkoutType workoutType)
+    {
+        return workoutType switch
+        {
+            WorkoutType.Arms => "Arms",
+            WorkoutType.Legs => "Legs",
+            WorkoutType.Inner_thighs => "Inner Thighs",
+            WorkoutType.Chest => "Chest",
+            WorkoutType.Abdominals => "Abdominals",
+            WorkoutType.Glutes => "Glutes",
+            WorkoutType.Back => "Back",
+            _ => workoutType.ToString()
+        };
+    }
+}

@@ -1,0 +1,439 @@
+﻿@page "/plan"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enum
+@using System.ComponentModel.DataAnnotations
+@inject IUserService UserService
+@inject IUserPhysiqueService UserPhysiqueService
+@inject IWorkoutPlanService WorkoutPlanService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<h3>Create Your Workout Plan</h3>
+
+<EditForm Model="@workoutPlanModel" OnValidSubmit="HandleWorkoutPlanCreation">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <!-- 1. How old are you -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">How old are you?</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputNumber @bind-Value="workoutPlanModel.Age" class="form-control" min="16" max="100" />
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Height and weight -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Height and Weight</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="height">Height (cm):</label>
+                        <InputNumber id="height" @bind-Value="workoutPlanModel.Height" class="form-control" min="120" max="250" step="0.1" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="weight">Current Weight (kg):</label>
+                        <InputNumber id="weight" @bind-Value="workoutPlanModel.CurrentWeight" class="form-control" min="30" max="300" step="0.1" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Current lifestyle -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Current Lifestyle</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputSelect @bind-Value="workoutPlanModel.LifestyleType" class="form-control">
+                    <option value="sedentary">Sedentary</option>
+                    <option value="moderately_active">Moderately Active</option>
+                    <option value="active">Active</option>
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Target weight -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold"> What weight do you want to reach?</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputNumber @bind-Value="workoutPlanModel.TargetWeight" class="form-control" min="30" max="300" step="0.1" />
+            </div>
+        </div>
+    </div>
+
+    <!-- 4.1. Target date -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">When do you want to reach this weight?</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputDate @bind-Value="workoutPlanModel.TargetDate" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Daily training duration -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">How long do you want to train daily? (max 1 hour)</h5>
+        </div>
+        <div class="card-body">
+            <div class="btn-group d-flex flex-wrap gap-2" role="group">
+                @foreach (var duration in trainingDurations)
+                {
+                    <button type="button"
+                            class="btn @(workoutPlanModel.TrainingDurationMinutes == duration ? "btn-primary" : "btn-outline-primary")"
+                            @onclick="() => SelectTrainingDuration(duration)">
+                        @duration min
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Weekly training frequency -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">How many days per week do you want to train? (max 7)</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputNumber @bind-Value="workoutPlanModel.TrainingDays" class="form-control" min="1" max="7" />
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Health problems -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Do you have any health problems?</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputTextArea @bind-Value="workoutPlanModel.HealthProblemsText" class="form-control" rows="3"
+                               placeholder="Enter health problems separated by commas" />
+                <small class="form-text text-muted">This data will be added to the diagnosis list</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Diet type -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Diet Type</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputSelect @bind-Value="workoutPlanModel.DietType" class="form-control">
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="omnivore">Omnivore</option>
+                    <option value="vegan">Vegan</option>
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. Plan type -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Do you want a premium or basic plan?</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputSelect @bind-Value="workoutPlanModel.PlanType" class="form-control">
+                    <option value="basic">Basic Plan</option>
+                    <option value="premium">Premium Plan</option>
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. Allergies -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Allergies</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <InputTextArea @bind-Value="workoutPlanModel.AllergiesText" class="form-control" rows="2"
+                               placeholder="Enter allergies separated by commas" />
+                <small class="form-text text-muted">This data will be added to the allergies list</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Types -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 style="color:black; font-weight:bold">Exercise Types You Prefer</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                @foreach (var workoutType in Enum.GetValues<WorkoutType>())
+                {
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input type="checkbox"
+                                   checked="@workoutPlanModel.WorkoutPreferences.Contains(workoutType)"
+                                   @onchange="@((e) => ToggleWorkoutPreference(workoutType, (bool)e.Value))" />
+                            <label>
+                                @GetWorkoutTypeDisplayName(workoutType)
+                            </label>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" style="color:black; font-weight:bold" class="btn btn-success btn-lg w-100" disabled="@isLoading">
+        @if (isLoading)
+        {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+        }
+        Create Workout Plan
+    </button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        @successMessage
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private WorkoutPlanCreationModel workoutPlanModel = new WorkoutPlanCreationModel();
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isLoading = false;
+    private User currentUser = null;
+
+    private List<int> trainingDurations = new List<int> { 5, 10, 15, 20, 30, 45, 60 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+        {
+            try
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            catch (Exception)
+            {
+                errorMessage = "User not found";
+            }
+        }
+        else
+        {
+            errorMessage = "Invalid user ID";
+        }
+    }
+
+    private void SelectTrainingDuration(int duration)
+    {
+        workoutPlanModel.TrainingDurationMinutes = duration;
+    }
+
+    private void ToggleWorkoutPreference(WorkoutType workoutType, bool isSelected)
+    {
+        if (isSelected)
+        {
+            if (!workoutPlanModel.WorkoutPreferences.Contains(workoutType))
+            {
+                workoutPlanModel.WorkoutPreferences.Add(workoutType);
+            }
+        }
+        else
+        {
+            workoutPlanModel.WorkoutPreferences.Remove(workoutType);
+        }
+    }
+
+    private string GetWorkoutTypeDisplayName(WorkoutType workoutType)
+    {
+        return workoutType switch
+        {
+            WorkoutType.Arms => "Arms",
+            WorkoutType.Legs => "Legs",
+            WorkoutType.Inner_thighs => "Inner Thighs",
+            WorkoutType.Chest => "Chest",
+            WorkoutType.Abdominals => "Abdominals",
+            WorkoutType.Glutes => "Glutes",
+            WorkoutType.Back => "Back",
+            _ => workoutType.ToString()
+        };
+    }
+
+    /// <summary>
+    /// KREIRANJE WORKOUT PLANA
+    /// Koristi novi pojednostavljeni servis
+    /// </summary>
+    private async Task HandleWorkoutPlanCreation()
+    {
+        if (currentUser == null)
+        {
+            errorMessage = "User not found";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            // 1. AŽURIRAJ KORISNIČKE PODATKE
+            currentUser.Height = workoutPlanModel.Height;
+            currentUser.Birthday = DateOnly.FromDateTime(DateTime.Now.AddYears(-workoutPlanModel.Age));
+            currentUser.Allergies = ParseCommaSeparatedList(workoutPlanModel.AllergiesText);
+            currentUser.Diagnosis = ParseCommaSeparatedList(workoutPlanModel.HealthProblemsText);
+
+            // 2. KREIRAJ USERPHYSIQUE (trenutna težina i BMI)
+            var userPhysique = new UserPhysique
+                {
+                    UserId = currentUser.Id,
+                    Weight = workoutPlanModel.CurrentWeight,
+                    BMI = UserPhysiqueService.CalculateBMI(workoutPlanModel.CurrentWeight, currentUser),
+                    Date = DateOnly.FromDateTime(DateTime.Now)
+                };
+            await UserPhysiqueService.CreateUserPhysique(userPhysique);
+
+            // 3. KREIRAJ WORKOUT PLAN
+            var workoutPlan = new WorkoutPlan
+                {
+                    UserId = currentUser.Id,
+                    TargetWeight = workoutPlanModel.TargetWeight,
+                    TrainingDays = workoutPlanModel.TrainingDays,
+                    TrainingDuration = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(workoutPlanModel.TrainingDurationMinutes)),
+                    WorkoutPlanType = workoutPlanModel.PlanType == "premium" ? WorkoutPlanType.Premium : WorkoutPlanType.Base,
+                    WorkoutPreference = workoutPlanModel.WorkoutPreferences,
+                    MaxCalories = WorkoutPlanService.CalculateMaxCalories(userPhysique.Weight, workoutPlanModel.TargetWeight, workoutPlanModel.LifestyleType),
+                    TargetDate = workoutPlanModel.TargetDate
+                };
+
+            var createdPlan = await WorkoutPlanService.CreateWorkoutPlan(workoutPlan);
+
+            // 4. GENERIRAJ PRVI TRENING (ako je danas dan treninga)
+            try
+            {
+                var firstWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
+
+                if (firstWorkouts.Any())
+                {
+                    successMessage = $"Workout plan created successfully! {firstWorkouts.Count} exercises generated for today.";
+                }
+                else
+                {
+                    successMessage = "Workout plan created successfully! Today is a rest day according to your schedule.";
+                }
+            }
+            catch (Exception)
+            {
+                // Ako generiranje ne uspije, plan je i dalje kreiran
+                successMessage = "Workout plan created successfully! You can start your workouts from the daily training page.";
+            }
+
+            // 5. PREUSMJERI NA DAILY TRAINING
+            await Task.Delay(2000); // Prikaži poruku 2 sekunde
+
+            var trainingUrl = $"/workouts/daily-training?userId={currentUser.Id}&userName={currentUser.UserName}";
+            NavigationManager.NavigateTo(trainingUrl);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error creating workout plan: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private List<string> ParseCommaSeparatedList(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return new List<string>();
+
+        return input.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                   .Select(x => x.Trim())
+                   .Where(x => !string.IsNullOrEmpty(x))
+                   .ToList();
+    }
+
+    public class WorkoutPlanCreationModel
+    {
+        [Required(ErrorMessage = "Age is required")]
+        [Range(16, 100, ErrorMessage = "Age must be between 16 and 100")]
+        public int Age { get; set; } = 25;
+
+        [Required(ErrorMessage = "Height is required")]
+        [Range(120, 250, ErrorMessage = "Height must be between 120 and 250 cm")]
+        public float Height { get; set; } = 175;
+
+        [Required(ErrorMessage = "Current weight is required")]
+        [Range(30, 300, ErrorMessage = "Weight must be between 30 and 300 kg")]
+        public float CurrentWeight { get; set; } = 70;
+
+        [Required(ErrorMessage = "Target weight is required")]
+        [Range(30, 300, ErrorMessage = "Target weight must be between 30 and 300 kg")]
+        public float TargetWeight { get; set; } = 65;
+
+        [Required(ErrorMessage = "Lifestyle type is required")]
+        public string LifestyleType { get; set; } = "sedentary";
+
+        [Required(ErrorMessage = "Training duration is required")]
+        [Range(5, 60, ErrorMessage = "Training duration must be between 5 and 60 minutes")]
+        public int TrainingDurationMinutes { get; set; } = 30;
+
+        [Required(ErrorMessage = "Training days is required")]
+        [Range(1, 7, ErrorMessage = "Training days must be between 1 and 7")]
+        public int TrainingDays { get; set; } = 3;
+
+        public List<WorkoutType> WorkoutPreferences { get; set; } = new List<WorkoutType>();
+
+        public string HealthProblemsText { get; set; } = string.Empty;
+        public string AllergiesText { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Diet type is required")]
+        public string DietType { get; set; } = "omnivore";
+
+        [Required(ErrorMessage = "Plan type is required")]
+        public string PlanType { get; set; } = "basic";
+
+        [Required(ErrorMessage = "Target date is required")]
+        public DateTime TargetDate { get; set; } = DateTime.Now.AddMonths(12);
+    }
+}

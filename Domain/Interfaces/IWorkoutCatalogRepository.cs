@@ -10,7 +10,7 @@ namespace Domain.Interfaces
 {
     public interface IWorkoutCatalogRepository : IBaseRepository<WorkoutCatalog>
     {
-        Task<IQueryable<WorkoutCatalog>> GetByWorkoutTypeAsync(List<WorkoutType> preferences);
+        Task<IEnumerable<WorkoutCatalog>> GetByWorkoutTypeAsync(List<WorkoutType> preferences);
         Task<IQueryable<WorkoutCatalog>> SearchByNameAsync(string searchTerm);
     }
 }

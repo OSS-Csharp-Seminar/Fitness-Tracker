@@ -33,7 +33,6 @@ namespace Infrastructure.Data
                 .Property(u => u.Role)
                 .HasConversion<string>();
 
-            // Ispravi nullable liste
             var allergiesProperty = modelBuilder.Entity<User>()
                 .Property(u => u.Allergies)
                 .HasConversion(
@@ -90,7 +89,6 @@ namespace Infrastructure.Data
                 c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())) : 0,
                 c => c != null ? c.ToList() : new List<WorkoutType>()));
 
-            // Relationshipi ostaju isti
             modelBuilder.Entity<UserPhysique>()
                 .HasOne(up => up.User)
                 .WithMany(u => u.PhysiqueHistory)
@@ -109,10 +107,10 @@ namespace Infrastructure.Data
                 .HasForeignKey(w => w.PlanId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<WorkoutCatalog>()
-                .HasOne(wc => wc.Workout)
-                .WithOne(w => w.WorkoutCatalog)
-                .HasForeignKey<Workout>(w => w.CatalogId)
+            modelBuilder.Entity<Workout>()
+                .HasOne(w => w.WorkoutCatalog)
+                .WithMany(wc => wc.Workouts)
+                .HasForeignKey(w => w.CatalogId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Meal>()
@@ -133,7 +131,6 @@ namespace Infrastructure.Data
                 .HasForeignKey(m => m.TrainerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexi ostaju isti
             modelBuilder.Entity<UserPhysique>()
                 .HasIndex(up => new { up.UserId, up.Date })
                 .HasDatabaseName("IX_UserPhysique_User_Date");
@@ -144,7 +141,7 @@ namespace Infrastructure.Data
 
             modelBuilder.Entity<Workout>()
                 .HasIndex(w => w.CatalogId)
-                .HasDatabaseName("IX_Workout_Catalog");
+                .HasDatabaseName("IX_Workout_CatalogId");
 
             modelBuilder.Entity<Message>()
                 .HasIndex(m => new { m.SenderId, m.TrainerId, m.DateSent })

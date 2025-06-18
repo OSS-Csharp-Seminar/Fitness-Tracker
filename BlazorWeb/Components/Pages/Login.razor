@@ -4,8 +4,9 @@
 @using System.ComponentModel.DataAnnotations
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
-@layout UserRegisterLayout
 @using Microsoft.AspNetCore.WebUtilities
+@inject IWorkoutPlanService WorkoutPlanService
+@layout UserRegisterLayout
 
 <h3>Login</h3>
 
@@ -70,7 +71,26 @@
         {
             var (userId, username) = await UserService.Login(loginModel.Email, loginModel.Password);
 
-            NavigationManager.NavigateTo($"/userlogin?userId={userId}&username={username}");
+            if (Guid.TryParse(userId, out var userGuid))
+            {
+                var user = await UserService.GetByIdAsync(userGuid);
+                var workoutPlans = await WorkoutPlanService.GetByUser(user);
+
+                if (workoutPlans.Any())
+                {
+                    // KORISNIK IMA PLAN → IDI NA DASHBOARD (UserLoginLayout)
+                    NavigationManager.NavigateTo($"/dashboard?userId={userId}&userName={username}");
+                }
+                else
+                {
+                    // NEMA PLAN → IDI KREIRATI PLAN
+                    NavigationManager.NavigateTo($"/plan?userId={userId}&userName={username}");
+                }
+            }
+            else
+            {
+                errorMessage = "Invalid user ID format";
+            }
         }
         catch (ArgumentException ex)
         {

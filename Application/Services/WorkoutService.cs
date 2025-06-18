@@ -115,5 +115,14 @@ namespace Application.Services
             var today = DateOnly.FromDateTime(DateTime.Now);
             return await _workoutRepository.GetCompletedCountAsync(user, today);
         }
+
+        public async Task<List<Workout>> GetByDateAsync(DateOnly date)
+        {
+            if (date == default)
+                throw new ArgumentException("Date is required");
+
+            var query = await _workoutRepository.GetByDateAsync(date);
+            return await query.ToListAsync();
+        }
     }
 }

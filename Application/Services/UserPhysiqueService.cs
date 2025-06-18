@@ -121,7 +121,7 @@ namespace Application.Services
             }
         }
 
-        private int CalculateBMI(float weight, User user)
+        public int CalculateBMI(float weight, User user)
         {
             if (user == null)
                 throw new ArgumentNullException(nameof(user));

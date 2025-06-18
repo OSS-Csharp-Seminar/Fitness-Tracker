@@ -11,5 +11,6 @@ namespace Application.Interfaces
         Task<UserPhysique> GetLatestPhysique(Guid userId);
         Task<bool> UpdatePhysique(UserPhysique userPhysique);
         Task<bool> DeletePhysique(Guid id);
+        int CalculateBMI(float weight, User user);
     }
 }

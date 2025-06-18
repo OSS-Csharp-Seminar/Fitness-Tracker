@@ -69,23 +69,41 @@ namespace Application.Services
             return await _workoutPlanRepository.DeleteAsync(id);
         }
 
-        public async Task<List<Workout>> GenerateDailyWorkout(User user, Guid planId)
+        //generira trening - GLAVNA METODA
+        public async Task<List<Workout>> GetOrGenerateWorkoutsForToday(User user)
         {
-            var workoutPlan = await _workoutPlanRepository.GetByIdAsync(planId);
-            if (workoutPlan == null)
-                throw new InvalidOperationException("Workout plan not found");
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
 
-            if (workoutPlan.UserId != user.Id)
-                throw new UnauthorizedAccessException("This workout plan does not belong to the user");
+            var todayWorkouts = await _workoutService.GetTodayWorkouts(user);
 
-            if (!await ShouldGenerateNewWorkout(user))
-                return await _workoutService.GetTodayWorkouts(user);
+            if (todayWorkouts.Any())
+            {
+                return todayWorkouts;
+            }
 
+            var userPlans = await GetByUser(user);
+            var activePlan = userPlans.OrderByDescending(p => p.StartDate).FirstOrDefault();
+
+            if (activePlan == null)
+                return new List<Workout>(); 
+
+            if (!IsTrainingDay(activePlan))
+                return new List<Workout>(); 
+
+            return await GenerateWorkoutsForToday(activePlan);
+        }
+
+        private async Task<List<Workout>> GenerateWorkoutsForToday(WorkoutPlan workoutPlan)
+        {
             var exercises = await GetSuitableExercises(workoutPlan);
             var selectedExercises = SelectExercisesForWorkout(exercises, workoutPlan);
 
             var workouts = new List<Workout>();
             var today = DateOnly.FromDateTime(DateTime.Now);
+
+            var totalDurationMinutes = CalculateExpectedDuration(workoutPlan);
+            var durationPerExercise = TimeSpan.FromMinutes((double)totalDurationMinutes / Math.Max(1, selectedExercises.Count));
 
             foreach (var exercise in selectedExercises)
             {
@@ -94,13 +112,52 @@ namespace Application.Services
                     PlanId = workoutPlan.Id,
                     CatalogId = exercise.Id,
                     Date = today,
-                    Duration = TimeSpan.Zero
+                    Duration = durationPerExercise
                 };
 
                 workouts.Add(await _workoutService.CreateWorkout(workout));
             }
 
             return workouts;
+        }
+
+        private bool IsTrainingDay(WorkoutPlan workoutPlan)
+        {
+            var today = DateTime.Now.DayOfWeek;
+            var trainingDays = GetTrainingDaysOfWeek(workoutPlan.TrainingDays);
+            return trainingDays.Contains(today);
+        }
+
+        private List<DayOfWeek> GetTrainingDaysOfWeek(int trainingDaysCount)
+        {
+            var days = new List<DayOfWeek>();
+
+            switch (trainingDaysCount)
+            {
+                case 1:
+                    days.Add(DayOfWeek.Monday);
+                    break;
+                case 2:
+                    days.AddRange(new[] { DayOfWeek.Monday, DayOfWeek.Thursday });
+                    break;
+                case 3:
+                    days.AddRange(new[] { DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday });
+                    break;
+                case 4:
+                    days.AddRange(new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Thursday, DayOfWeek.Friday });
+                    break;
+                case 5:
+                    days.AddRange(new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday });
+                    break;
+                case 6:
+                    days.AddRange(new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday });
+                    break;
+                case 7:
+                    days.AddRange(Enum.GetValues<DayOfWeek>());
+                    break;
+            }
+
+            return days;
         }
 
         public async Task<List<Workout>> GetWorkoutHistory(User user, DateOnly? fromDate = null, DateOnly? toDate = null)
@@ -119,24 +176,7 @@ namespace Application.Services
             return workouts.OrderByDescending(w => w.Date).ToList();
         }
 
-        public async Task<bool> ShouldGenerateNewWorkout(User user)
-        {
-            var todayWorkouts = await _workoutService.GetTodayWorkouts(user);
-
-            if (!todayWorkouts.Any())
-                return true;
-
-            if (todayWorkouts.Any(w => w.Completed))
-            {
-                var lastCompletedDate = todayWorkouts.Max(w => w.Date);
-                var today = DateOnly.FromDateTime(DateTime.Now);
-                return lastCompletedDate < today;
-            }
-
-            return false;
-        }
-
-        public async Task<int> CalculateExpectedDuration(WorkoutPlan workoutPlan)
+        public int CalculateExpectedDuration(WorkoutPlan workoutPlan)
         {
             if (workoutPlan == null)
                 throw new ArgumentNullException(nameof(workoutPlan));
@@ -159,32 +199,54 @@ namespace Application.Services
             if (!availableExercises.Any())
                 return new List<WorkoutCatalog>();
 
-            var targetDurationMinutes = CalculateExpectedDuration(workoutPlan).Result;
-            const int maxExerciseDuration = 3;
-            var numberOfExercises = (int)Math.Ceiling((double)targetDurationMinutes / maxExerciseDuration);
-            numberOfExercises = Math.Max(2, Math.Min(20, numberOfExercises));
+            var targetDurationMinutes = CalculateExpectedDuration(workoutPlan);
+            const int averageExerciseDurationMinutes = 5;
+            var numberOfExercises = Math.Max(3, Math.Min(15, targetDurationMinutes / averageExerciseDurationMinutes));
 
             var selectedExercises = availableExercises
                 .OrderBy(x => _random.Next())
                 .Take(numberOfExercises)
                 .ToList();
 
-            var totalCaloriesBurned = CalculateTotalCalories(selectedExercises, targetDurationMinutes, numberOfExercises);
-
             return selectedExercises;
         }
 
-        private int CalculateTotalCalories(List<WorkoutCatalog> exercises, int totalDurationMinutes, int numberOfExercises)
+        public int CalculateMaxCalories(float currentWeight, float targetWeight, string lifestyleType)
         {
-            var minutesPerExercise = (double)totalDurationMinutes / numberOfExercises;
-            var totalCalories = 0;
-
-            foreach (var exercise in exercises)
+            var baseBMR = lifestyleType switch
             {
-                totalCalories += (int)(exercise.CaloriesBurned * minutesPerExercise);
+                "sedentary" => 1600,
+                "moderately_active" => 1800,
+                "active" => 2000,
+                _ => 1800
+            };
+
+            var weightDifference = currentWeight - targetWeight;
+            int calorieAdjustment;
+
+            if (weightDifference > 0) // Mršavljenje
+            {
+                if (weightDifference <= 5)
+                    calorieAdjustment = -300;
+                else if (weightDifference <= 15)
+                    calorieAdjustment = -500;
+                else
+                    calorieAdjustment = -700;
+            }
+            else if (weightDifference < 0) // Debljanje
+            {
+                var weightToGain = Math.Abs(weightDifference);
+                if (weightToGain <= 5)
+                    calorieAdjustment = 300;
+                else
+                    calorieAdjustment = 500;
+            }
+            else // Održavanje
+            {
+                calorieAdjustment = 0;
             }
 
-            return totalCalories;
+            return Math.Max(1200, baseBMR + calorieAdjustment);
         }
     }
 }

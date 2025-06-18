@@ -9,7 +9,9 @@ namespace Application.Interfaces
         Task<List<WorkoutPlan>> GetByUser(User user);
         Task<bool> DeleteWorkoutPlan(Guid id);
 
-        Task<List<Workout>> GenerateDailyWorkout(User user, Guid planId);
+        Task<List<Workout>> GetOrGenerateWorkoutsForToday(User user);
         Task<List<Workout>> GetWorkoutHistory(User user, DateOnly? fromDate = null, DateOnly? toDate = null);
+        int CalculateMaxCalories(float currentWeight, float targetWeight, string lifestyleType);
     }
+
 }

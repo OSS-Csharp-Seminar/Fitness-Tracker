@@ -11,7 +11,6 @@ namespace Domain.Entities
         public List<WorkoutType> tag { get; set; } = new List<WorkoutType>();
         public string? ImageUrl { get; set; }
 
-        public virtual Workout Workout { get; set; }
-
+        public virtual ICollection<Workout> Workouts { get; set; } = new List<Workout>();
     }
 }

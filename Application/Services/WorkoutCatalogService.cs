@@ -35,8 +35,8 @@ namespace Application.Services
             if (preferences == null || !preferences.Any())
                 return await GetAllExercises();
 
-            var query = await _workoutCatalogRepository.GetByWorkoutTypeAsync(preferences);
-            return await query.ToListAsync();
+            var result = await _workoutCatalogRepository.GetByWorkoutTypeAsync(preferences);
+            return result.ToList();
         }
 
         public async Task<List<WorkoutCatalog>> SearchExercises(string searchTerm)
@@ -45,7 +45,7 @@ namespace Application.Services
                 return await GetAllExercises();
 
             var query = await _workoutCatalogRepository.SearchByNameAsync(searchTerm.Trim());
-            return await query.ToListAsync();
+            return await query.ToListAsync(); 
         }
     }
 }
