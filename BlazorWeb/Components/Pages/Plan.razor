@@ -296,11 +296,6 @@
             _ => workoutType.ToString()
         };
     }
-
-    /// <summary>
-    /// KREIRANJE WORKOUT PLANA
-    /// Koristi novi pojednostavljeni servis
-    /// </summary>
     private async Task HandleWorkoutPlanCreation()
     {
         if (currentUser == null)
@@ -315,13 +310,11 @@
 
         try
         {
-            // 1. AŽURIRAJ KORISNIČKE PODATKE
             currentUser.Height = workoutPlanModel.Height;
             currentUser.Birthday = DateOnly.FromDateTime(DateTime.Now.AddYears(-workoutPlanModel.Age));
             currentUser.Allergies = ParseCommaSeparatedList(workoutPlanModel.AllergiesText);
             currentUser.Diagnosis = ParseCommaSeparatedList(workoutPlanModel.HealthProblemsText);
 
-            // 2. KREIRAJ USERPHYSIQUE (trenutna težina i BMI)
             var userPhysique = new UserPhysique
                 {
                     UserId = currentUser.Id,
@@ -331,7 +324,6 @@
                 };
             await UserPhysiqueService.CreateUserPhysique(userPhysique);
 
-            // 3. KREIRAJ WORKOUT PLAN
             var workoutPlan = new WorkoutPlan
                 {
                     UserId = currentUser.Id,
@@ -346,7 +338,6 @@
 
             var createdPlan = await WorkoutPlanService.CreateWorkoutPlan(workoutPlan);
 
-            // 4. GENERIRAJ PRVI TRENING (ako je danas dan treninga)
             try
             {
                 var firstWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
@@ -362,12 +353,9 @@
             }
             catch (Exception)
             {
-                // Ako generiranje ne uspije, plan je i dalje kreiran
                 successMessage = "Workout plan created successfully! You can start your workouts from the daily training page.";
             }
-
-            // 5. PREUSMJERI NA DAILY TRAINING
-            await Task.Delay(2000); // Prikaži poruku 2 sekunde
+             await Task.Delay(2000); 
 
             var trainingUrl = $"/workouts/daily-training?userId={currentUser.Id}&userName={currentUser.UserName}";
             NavigationManager.NavigateTo(trainingUrl);

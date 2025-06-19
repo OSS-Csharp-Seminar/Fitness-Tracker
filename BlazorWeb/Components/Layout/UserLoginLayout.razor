@@ -12,13 +12,13 @@
     <div class="nav-container">
         <nav class="navbar">
             <div class="navbar-brand">
-                <a href="/">PushApps</a>
+                <a href="@GetUrlWithParams("/")">PushApps</a>
             </div>
             <div class="navbar-links">
-                <a href="/workouts/daily-training@GetUrlParams()" class="nav-link @GetMainActiveClass("workouts")">WORKOUTS</a>
-                <a href="/my-plan/dashboard@GetUrlParams()" class="nav-link @GetMainActiveClass("my-plan")">MY PLAN</a>
-                <a href="/meals/today@GetUrlParams()" class="nav-link @GetMainActiveClass("meals")">MEALS</a>
-                <a href="/profile/personal@GetUrlParams()" class="nav-link @GetMainActiveClass("profile")">MY PROFILE</a>
+                <a href="@GetUrlWithParams("/workouts/daily-training")" class="nav-link @GetMainActiveClass("workouts")">WORKOUTS</a>
+                <a href="@GetUrlWithParams("/my-plan/dashboard")" class="nav-link @GetMainActiveClass("my-plan")">MY PLAN</a>
+                <a href="@GetUrlWithParams("/meals/today")" class="nav-link @GetMainActiveClass("meals")">MEALS</a>
+                <a href="@GetUrlWithParams("/profile/personal")" class="nav-link @GetMainActiveClass("profile")">MY PROFILE</a>
             </div>
         </nav>
     </div>
@@ -30,17 +30,17 @@
                 @if (CurrentSection == "workouts")
                 {
                     <li class="sidebar-item">
-                        <a href="/workouts/daily-training@GetUrlParams()" class="sidebar-link @GetActiveClass("/workouts/daily-training")">
+                        <a href="@GetUrlWithParams("/workouts/daily-training")" class="sidebar-link @GetActiveClass("/workouts/daily-training")">
                             Day Training
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/workouts/training-history@GetUrlParams()" class="sidebar-link @GetActiveClass("/workouts/training-history")">
+                        <a href="@GetUrlWithParams("/workouts/training-history")" class="sidebar-link @GetActiveClass("/workouts/training-history")">
                             Training History
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/workouts/view-all@GetUrlParams()" class="sidebar-link @GetActiveClass("/workouts/view-all")">
+                        <a href="@GetUrlWithParams("/workouts/view-all")" class="sidebar-link @GetActiveClass("/workouts/view-all")">
                             View all Workouts
                         </a>
                     </li>
@@ -48,27 +48,27 @@
                 else if (CurrentSection == "my-plan")
                 {
                     <li class="sidebar-item">
-                        <a href="/my-plan/dashboard@GetUrlParams()" class="sidebar-link @GetActiveClass("/my-plan/dashboard")">
+                        <a href="@GetUrlWithParams("/my-plan/dashboard")" class="sidebar-link @GetActiveClass("/my-plan/dashboard")">
                             Dashboard
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/my-plan/create-plan@GetUrlParams()" class="sidebar-link @GetActiveClass("/my-plan/create-plan")">
+                        <a href="@GetUrlWithParams("/my-plan/create-plan")" class="sidebar-link @GetActiveClass("/my-plan/create-plan")">
                             Create New Plan
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/my-plan/my-plans@GetUrlParams()" class="sidebar-link @GetActiveClass("/my-plan/my-plans")">
+                        <a href="@GetUrlWithParams("/my-plan/my-plans")" class="sidebar-link @GetActiveClass("/my-plan/my-plans")">
                             My Plans
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/my-plan/progress@GetUrlParams()" class="sidebar-link @GetActiveClass("/my-plan/progress")">
+                        <a href="@GetUrlWithParams("/my-plan/progress")" class="sidebar-link @GetActiveClass("/my-plan/progress")">
                             Progress Tracking
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/my-plan/statistics@GetUrlParams()" class="sidebar-link @GetActiveClass("/my-plan/statistics")">
+                        <a href="@GetUrlWithParams("/my-plan/statistics")" class="sidebar-link @GetActiveClass("/my-plan/statistics")">
                             Statistics
                         </a>
                     </li>
@@ -76,32 +76,32 @@
                 else if (CurrentSection == "meals")
                 {
                     <li class="sidebar-item">
-                        <a href="/meals/today@GetUrlParams()" class="sidebar-link @GetActiveClass("/meals/today")">
+                        <a href="@GetUrlWithParams("/meals/today")" class="sidebar-link @GetActiveClass("/meals/today")">
                             Today's Meals
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/meals/add@GetUrlParams()" class="sidebar-link @GetActiveClass("/meals/add")">
+                        <a href="@GetUrlWithParams("/meals/add")" class="sidebar-link @GetActiveClass("/meals/add")">
                             Add Meal
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/meals/history@GetUrlParams()" class="sidebar-link @GetActiveClass("/meals/history")">
+                        <a href="@GetUrlWithParams("/meals/history")" class="sidebar-link @GetActiveClass("/meals/history")">
                             Meal History
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/meals/recipes@GetUrlParams()" class="sidebar-link @GetActiveClass("/meals/recipes")">
+                        <a href="@GetUrlWithParams("/meals/recipes")" class="sidebar-link @GetActiveClass("/meals/recipes")">
                             Recipes
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/meals/nutrition@GetUrlParams()" class="sidebar-link @GetActiveClass("/meals/nutrition")">
+                        <a href="@GetUrlWithParams("/meals/nutrition")" class="sidebar-link @GetActiveClass("/meals/nutrition")">
                             Nutrition Tracker
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/meals/shopping@GetUrlParams()" class="sidebar-link @GetActiveClass("/meals/shopping")">
+                        <a href="@GetUrlWithParams("/meals/shopping")" class="sidebar-link @GetActiveClass("/meals/shopping")">
                             Shopping List
                         </a>
                     </li>
@@ -109,27 +109,27 @@
                 else if (CurrentSection == "profile")
                 {
                     <li class="sidebar-item">
-                        <a href="/profile/personal@GetUrlParams()" class="sidebar-link @GetActiveClass("/profile/personal")">
+                        <a href="@GetUrlWithParams("/profile/personal")" class="sidebar-link @GetActiveClass("/profile/personal")">
                             Personal Info
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/profile/physical@GetUrlParams()" class="sidebar-link @GetActiveClass("/profile/physical")">
+                        <a href="@GetUrlWithParams("/profile/physical")" class="sidebar-link @GetActiveClass("/profile/physical")">
                             Physical Data
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/profile/preferences@GetUrlParams()" class="sidebar-link @GetActiveClass("/profile/preferences")">
+                        <a href="@GetUrlWithParams("/profile/preferences")" class="sidebar-link @GetActiveClass("/profile/preferences")">
                             Preferences
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/profile/account@GetUrlParams()" class="sidebar-link @GetActiveClass("/profile/account")">
+                        <a href="@GetUrlWithParams("/profile/account")" class="sidebar-link @GetActiveClass("/profile/account")">
                             Account Settings
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="/profile/notifications@GetUrlParams()" class="sidebar-link @GetActiveClass("/profile/notifications")">
+                        <a href="@GetUrlWithParams("/profile/notifications")" class="sidebar-link @GetActiveClass("/profile/notifications")">
                             Notifications
                         </a>
                     </li>
@@ -144,6 +144,12 @@
 </div>
 
 <footer class="nav-container">
+    @if (!string.IsNullOrEmpty(userName))
+    {
+        <div class="text-muted">
+            Logged in as: @userName (ID: @userId)
+        </div>
+    }
 </footer>
 
 @code {
@@ -152,7 +158,17 @@
 
     protected override void OnInitialized()
     {
-        // Dohvati parametre iz URL-a
+        ExtractUserParams();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ExtractUserParams();
+    }
+
+    private void ExtractUserParams()
+    {
+        // Dohvati parametre iz URL-a (oba načina)
         var uri = new Uri(NavigationManager.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
 
@@ -161,6 +177,35 @@
 
         if (query.TryGetValue("userName", out var userNameValue))
             userName = userNameValue;
+
+        // Ako nema query parametara, provjeri route parametre
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userName))
+        {
+            var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 2)
+            {
+                var lastSegment = segments[segments.Length - 1];
+                var secondLastSegment = segments[segments.Length - 2];
+
+                // Provjeri da li nisu nazivi stranica
+                if (!IsPageName(lastSegment) && !IsPageName(secondLastSegment))
+                {
+                    userName = lastSegment;
+                    userId = secondLastSegment;
+                }
+            }
+        }
+    }
+
+    private bool IsPageName(string segment)
+    {
+        var pageNames = new[] {
+            "daily-training", "training-history", "view-all",
+            "dashboard", "create-plan", "my-plans", "progress", "statistics",
+            "today", "add", "history", "recipes", "nutrition", "shopping",
+            "personal", "physical", "preferences", "account", "notifications"
+        };
+        return pageNames.Contains(segment);
     }
 
     private string CurrentSection
@@ -171,14 +216,14 @@
 
             if (currentPath.StartsWith("workouts"))
                 return "workouts";
-            else if (currentPath.StartsWith("my-plan") || currentPath.StartsWith("dashboard"))
+            else if (currentPath.StartsWith("my-plan"))
                 return "my-plan";
             else if (currentPath.StartsWith("meals"))
                 return "meals";
             else if (currentPath.StartsWith("profile"))
                 return "profile";
 
-            return "workouts"; // default
+            return "workouts";
         }
     }
 
@@ -205,16 +250,14 @@
         return CurrentSection == section ? "active" : "";
     }
 
-    /// <summary>
-    /// KLJUČNA METODA - dodaje userId i userName na sve linkove
-    /// </summary>
-    private string GetUrlParams()
+    /// KLJUČNA METODA - uvijek dodaje userId i userName na sve linkove
+    private string GetUrlWithParams(string baseUrl)
     {
         if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(userName))
         {
-            return $"?userId={userId}&userName={userName}";
+            return $"{baseUrl}?userId={userId}&userName={userName}";
         }
-        return "";
+        return baseUrl;
     }
 
     [Parameter]

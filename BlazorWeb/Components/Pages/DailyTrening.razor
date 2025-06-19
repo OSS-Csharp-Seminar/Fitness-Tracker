@@ -185,6 +185,11 @@ else if (todayWorkouts.Any())
         await LoadUserAndWorkouts();
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadUserAndWorkouts();
+    }
+
     private async Task LoadUserAndWorkouts()
     {
         isLoading = true;
@@ -249,7 +254,6 @@ else if (todayWorkouts.Any())
         {
             loadingMessage = "Checking for today's workouts...";
 
-            // Koristi novi servis za dohvaćanje ili generiranje treninzima
             todayWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
 
             if (!todayWorkouts.Any())
@@ -265,7 +269,6 @@ else if (todayWorkouts.Any())
                 return;
             }
 
-            // Dohvati informacije o vježbama
             loadingMessage = "Loading exercise details...";
             var catalogIds = todayWorkouts.Select(w => w.CatalogId).Distinct().ToList();
             workoutCatalogItems = new List<WorkoutCatalog>();
@@ -291,7 +294,6 @@ else if (todayWorkouts.Any())
         {
             if (isCompleted)
             {
-                // Određeni zadana trajanje na temelju workout-a
                 var workout = todayWorkouts.FirstOrDefault(w => w.Id == workoutId);
                 var duration = workout?.Duration ?? TimeSpan.FromMinutes(5);
 
@@ -299,7 +301,6 @@ else if (todayWorkouts.Any())
             }
             else
             {
-                // Ažuriraj workout kao nezavršen
                 var workout = todayWorkouts.FirstOrDefault(w => w.Id == workoutId);
                 if (workout != null)
                 {
@@ -351,14 +352,12 @@ else if (todayWorkouts.Any())
 
     private void NavigateToCreatePlan()
     {
-        var planUrl = $"/plan?userId={currentUser?.Id}&userName={currentUser?.UserName}";
-        NavigationManager.NavigateTo(planUrl);
+        NavigationManager.NavigateTo($"/my-plan/create-plan?userId={currentUser?.Id}&userName={UserName}");
     }
 
     private void ViewWorkoutHistory()
     {
-        var historyUrl = $"/workouts/history?userId={currentUser?.Id}&userName={currentUser?.UserName}";
-        NavigationManager.NavigateTo(historyUrl);
+        NavigationManager.NavigateTo($"/workouts/training-history?userId={currentUser?.Id}&userName={UserName}");
     }
 
     private string GetWorkoutTypeDisplayName(WorkoutType workoutType)

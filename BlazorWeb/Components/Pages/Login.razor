@@ -78,12 +78,10 @@
 
                 if (workoutPlans.Any())
                 {
-                    // KORISNIK IMA PLAN → IDI NA DASHBOARD (UserLoginLayout)
-                    NavigationManager.NavigateTo($"/dashboard?userId={userId}&userName={username}");
+                    NavigationManager.NavigateTo($"/workouts/daily-training?userId={userId}&userName={username}");
                 }
                 else
                 {
-                    // NEMA PLAN → IDI KREIRATI PLAN
                     NavigationManager.NavigateTo($"/plan?userId={userId}&userName={username}");
                 }
             }

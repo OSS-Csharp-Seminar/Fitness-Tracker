@@ -1,0 +1,406 @@
+﻿@page "/workouts/view-all"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enum
+@inject IWorkoutCatalogService WorkoutCatalogService
+@inject IWorkoutService WorkoutService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>All Workouts - PushApps</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h3 style="color:black; font-weight:bold">All Available Exercises</h3>
+        <p class="text-muted">Browse and add exercises to your daily training</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 style="color:black; font-weight:bold"><i class="fas fa-search"></i> Search & Filter</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="searchTerm" class="form-label">Search Exercise:</label>
+                        <div class="input-group">
+                            <input type="text" id="searchTerm" @bind="searchTerm" @bind:event="oninput"
+                                   class="form-control" placeholder="Search by exercise name..." />
+                            <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="workoutTypeFilter" class="form-label">Filter by Type:</label>
+                        <select id="workoutTypeFilter" @bind="selectedWorkoutType" class="form-select">
+                            <option value="">All Types</option>
+                            @foreach (var type in Enum.GetValues<WorkoutType>())
+                            {
+                                <option value="@type">@GetWorkoutTypeDisplayName(type)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <button class="btn btn-primary" @onclick="ApplyFilters">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" @onclick="ClearFilters">
+                            <i class="fas fa-undo"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading exercises...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <h5>Error</h5>
+        <p>@errorMessage</p>
+        <button class="btn btn-primary" @onclick="LoadAllExercises">Reload</button>
+    </div>
+}
+else if (!filteredExercises.Any())
+{
+    <div class="alert alert-warning text-center">
+        <h5><i class="fas fa-search"></i> No Exercises Found</h5>
+        <p>No exercises match your search criteria. Try adjusting your filters.</p>
+        <button class="btn btn-primary" @onclick="ClearFilters">Clear Filters</button>
+    </div>
+}
+else
+{
+    <div class="row mb-3">
+        <div class="col-12">
+            <h4 style="color:black; font-weight:bold">
+                Exercise Catalog
+                <span class="badge bg-primary ms-2">@filteredExercises.Count exercises</span>
+                @if (hasActiveFilters)
+                {
+                    <span class="badge bg-secondary ms-1">Filtered</span>
+                }
+            </h4>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+        </div>
+    }
+    <div class="row">
+        @foreach (var exercise in filteredExercises)
+        {
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="text-center p-3">
+                        @if (!string.IsNullOrEmpty(exercise.ImageUrl))
+                        {
+                            <img src="@exercise.ImageUrl"
+                                 alt="@exercise.WorkoutName"
+                                 class="img-fluid rounded"
+                                 style="width: 300px; height: 300px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                 style="width: 300px; height: 300px; margin: 0 auto;">
+                                <i class="fas fa-dumbbell fa-4x text-muted"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-center" style="color:black; font-weight:bold">
+                            @exercise.WorkoutName
+                        </h5>
+
+                        <p class="card-text text-muted flex-grow-1">
+                            @if (!string.IsNullOrEmpty(exercise.Description))
+                            {
+                                @exercise.Description
+                            }
+                            else
+                            {
+                                <em>No description available</em>
+                            }
+                        </p>
+
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Calories/Min</small>
+                                <strong class="text-primary">@exercise.CaloriesBurned</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Difficulty</small>
+                                <strong class="text-info">@GetDifficultyLevel(exercise.CaloriesBurned)</strong>
+                            </div>
+                        </div>
+
+                        @if (exercise.tag?.Any() == true)
+                        {
+                            <div class="text-center mb-3">
+                                <small class="text-muted d-block mb-1">Target Areas:</small>
+                                <div class="d-flex flex-wrap justify-content-center gap-1">
+                                    @foreach (var tag in exercise.tag.Take(4))
+                                    {
+                                        <span style="color:black; font-weight:bold" class="badge bg-secondary">@GetWorkoutTypeDisplayName(tag)</span>
+                                    }
+                                    @if (exercise.tag.Count > 4)
+                                    {
+                                        <span style="color:black; font-weight:bold" class="badge bg-light text-dark">+@(exercise.tag.Count - 4) more</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="text-center">
+                            <button style="color:black; font-weight:bold" class="btn btn-success w-100"
+                                    @onclick="() => AddToTodayTraining(exercise)"
+                                    disabled="@(addingToTraining.Contains(exercise.Id))">
+                                @if (addingToTraining.Contains(exercise.Id))
+                                {
+                                    <span style="color:black; font-weight:bold" class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Adding...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-plus"></i>
+                                    <span>Add to Today's Training</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (allExercises.Count > displayedCount)
+    {
+        <div class="text-center mt-4">
+            <button style="color:black; font-weight:bold" class="btn btn-outline-primary" @onclick="LoadMoreExercises">
+                <i class="fas fa-chevron-down"></i> Load More Exercises
+            </button>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private List<WorkoutCatalog> allExercises = new List<WorkoutCatalog>();
+    private List<WorkoutCatalog> filteredExercises = new List<WorkoutCatalog>();
+    private User currentUser = null;
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private string searchTerm = string.Empty;
+    private WorkoutType? selectedWorkoutType = null;
+    private bool hasActiveFilters = false;
+
+    private int displayedCount = 12;
+    private const int LoadMoreIncrement = 12;
+
+    private HashSet<Guid> addingToTraining = new HashSet<Guid>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserAndExercises();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadUserAndExercises();
+    }
+
+    private async Task LoadUserAndExercises()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // LOAD USER
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            else
+            {
+                var uri = new Uri(NavigationManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+                if (query.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out userGuid))
+                {
+                    currentUser = await UserService.GetByIdAsync(userGuid);
+                }
+                else
+                {
+                    errorMessage = "User not found. Please log in again.";
+                    return;
+                }
+            }
+
+            await LoadAllExercises();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadAllExercises()
+    {
+        try
+        {
+            allExercises = await WorkoutCatalogService.GetAllExercises();
+            ApplyFiltersInternal();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading exercises: {ex.Message}";
+        }
+    }
+
+    private void ApplyFiltersInternal()
+    {
+        var filtered = allExercises.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filtered = filtered.Where(e =>
+                e.WorkoutName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (e.Description?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        if (selectedWorkoutType.HasValue)
+        {
+            filtered = filtered.Where(e => e.tag?.Contains(selectedWorkoutType.Value) == true);
+        }
+
+        filteredExercises = filtered.Take(displayedCount).ToList();
+        hasActiveFilters = !string.IsNullOrWhiteSpace(searchTerm) || selectedWorkoutType.HasValue;
+    }
+
+    private async Task ApplyFilters()
+    {
+        displayedCount = LoadMoreIncrement; 
+        ApplyFiltersInternal();
+        await Task.CompletedTask;
+    }
+
+    private async Task ClearFilters()
+    {
+        searchTerm = string.Empty;
+        selectedWorkoutType = null;
+        displayedCount = LoadMoreIncrement;
+        ApplyFiltersInternal();
+        await Task.CompletedTask;
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        await ApplyFilters();
+    }
+
+    private void LoadMoreExercises()
+    {
+        displayedCount += LoadMoreIncrement;
+        ApplyFiltersInternal();
+    }
+
+    private async Task AddToTodayTraining(WorkoutCatalog exercise)
+    {
+        if (currentUser == null || addingToTraining.Contains(exercise.Id))
+            return;
+
+        addingToTraining.Add(exercise.Id);
+
+        try
+        {
+            var newWorkout = new Workout
+                {
+                    CatalogId = exercise.Id,
+                    Date = DateOnly.FromDateTime(DateTime.Now),
+                    Duration = TimeSpan.FromMinutes(5),
+                    Completed = false
+                };
+
+            await WorkoutService.CreateWorkout(newWorkout);
+
+            successMessage = $"'{exercise.WorkoutName}' has been added to your today's training!";
+
+            _ = Task.Delay(3000).ContinueWith(_ =>
+            {
+                successMessage = string.Empty;
+                InvokeAsync(StateHasChanged);
+            });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error adding exercise to training: {ex.Message}";
+        }
+        finally
+        {
+            addingToTraining.Remove(exercise.Id);
+        }
+    }
+
+    private string GetWorkoutTypeDisplayName(WorkoutType workoutType)
+    {
+        return workoutType switch
+        {
+            WorkoutType.Arms => "Arms",
+            WorkoutType.Legs => "Legs",
+            WorkoutType.Inner_thighs => "Inner Thighs",
+            WorkoutType.Chest => "Chest",
+            WorkoutType.Abdominals => "Abdominals",
+            WorkoutType.Glutes => "Glutes",
+            WorkoutType.Back => "Back",
+            _ => workoutType.ToString().Replace("_", " ")
+        };
+    }
+
+    private string GetDifficultyLevel(int caloriesPerMinute)
+    {
+        return caloriesPerMinute switch
+        {
+            <= 5 => "Easy",
+            <= 10 => "Medium",
+            <= 15 => "Hard",
+            _ => "Extreme"
+        };
+    }
+}
