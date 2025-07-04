@@ -1,38 +1,78 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager NavigationManager
+
 <PageTitle>PushApps - Fitness aplikacija</PageTitle>
 <HeadContent>
     <link rel="stylesheet" href="homepage-layout.css" />
 </HeadContent>
+
 <div class="hero-page">
     <div class="nav-container">
         <nav class="navbar">
             <div class="navbar-brand">
-                <a href="/">PushApps</a>
+                <NavLink href="/">PushApps</NavLink>
             </div>
             <div class="navbar-links">
-                <a href="/login" class="nav-link">LOGIN</a>
-                <a href="/register" class="nav-link">SIGNUP</a>
+                <NavLink href="/" class="nav-link">HOME</NavLink>
+                <NavLink href="/login" class="nav-link">LOGIN</NavLink>
+                <NavLink href="/register" class="nav-link">SIGNUP</NavLink>
             </div>
         </nav>
     </div>
+
     <div class="hero-content-wrapper">
-        <div class="hero-content">
-            <div class="hero-text">
-                @LeftContent
+        @{
+            var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            var isHomePage = string.IsNullOrEmpty(currentPath) || currentPath == "/";
+        }
+
+        @if (isHomePage)
+        {
+            <!-- Homepage sa hero sadržajem -->
+            <div class="hero-content">
+                <div class="hero-text">
+                    @if (LeftContent != null)
+                    {
+                        @LeftContent
+                    }
+                    else
+                    {
+                        <h1>Start Your Fitness Journey Today</h1>
+                        <h2>Transform Your Body, Mind & Life</h2>
+                        <p>
+                            Join thousands of people who have already transformed their lives with PushApps.
+                            Get personalized workout plans, track your progress, and achieve your fitness goals.
+                        </p>
+                    }
+                </div>
+                <div class="hero-visual">
+                    @if (RightContent != null)
+                    {
+                        @RightContent
+                    }
+                    else
+                    {
+                        <img src="/HomePage/HomePage2.png" alt="Fitness Journey" />
+                    }
+                </div>
             </div>
-            <div class="hero-visual">
-                @RightContent
+        }
+        else
+        {
+            <!-- Ostale stranice (login, register) -->
+            <div class="page-content">
+                @Body
             </div>
-        </div>
-    </div>
-    <div class="main-content">
-        @Body
+        }
     </div>
 </div>
+
 @code {
     [Parameter]
     public RenderFragment LeftContent { get; set; }
+
     [Parameter]
     public RenderFragment RightContent { get; set; }
 }

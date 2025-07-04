@@ -5,6 +5,7 @@
 @using Domain.Enum
 @inject IWorkoutCatalogService WorkoutCatalogService
 @inject IWorkoutService WorkoutService
+@inject IWorkoutPlanService WorkoutPlanService
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @layout UserLoginLayout
@@ -315,7 +316,7 @@ else
 
     private async Task ApplyFilters()
     {
-        displayedCount = LoadMoreIncrement; 
+        displayedCount = LoadMoreIncrement;
         ApplyFiltersInternal();
         await Task.CompletedTask;
     }
@@ -350,11 +351,34 @@ else
 
         try
         {
+            var existingTodayWorkouts = await WorkoutService.GetTodayWorkouts(currentUser);
+            if (existingTodayWorkouts.Any(w => w.CatalogId == exercise.Id))
+            {
+                successMessage = $"'{exercise.WorkoutName}' is already in your today's training!";
+
+                _ = Task.Delay(3000).ContinueWith(_ =>
+                {
+                    successMessage = string.Empty;
+                    InvokeAsync(StateHasChanged);
+                });
+
+                return;
+            }
+            var userPlans = await WorkoutPlanService.GetByUser(currentUser);
+            var activePlan = userPlans.OrderByDescending(p => p.StartDate).FirstOrDefault();
+
+            if (activePlan == null)
+            {
+                errorMessage = "No active workout plan found. Please create a workout plan first.";
+                return;
+            }
+
             var newWorkout = new Workout
                 {
+                    PlanId = activePlan.Id, 
                     CatalogId = exercise.Id,
                     Date = DateOnly.FromDateTime(DateTime.Now),
-                    Duration = TimeSpan.FromMinutes(5),
+                    Duration = TimeSpan.FromMinutes(3), 
                     Completed = false
                 };
 

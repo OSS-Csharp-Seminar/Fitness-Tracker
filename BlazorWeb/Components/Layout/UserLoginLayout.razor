@@ -16,9 +16,21 @@
             </div>
             <div class="navbar-links">
                 <a href="@GetUrlWithParams("/workouts/daily-training")" class="nav-link @GetMainActiveClass("workouts")">WORKOUTS</a>
-                <a href="@GetUrlWithParams("/my-plan/dashboard")" class="nav-link @GetMainActiveClass("my-plan")">MY PLAN</a>
+                <a href="@GetUrlWithParams("/progress/info")" class="nav-link @GetMainActiveClass("progress")">PROGRESS</a>
                 <a href="@GetUrlWithParams("/meals/today")" class="nav-link @GetMainActiveClass("meals")">MEALS</a>
-                <a href="@GetUrlWithParams("/profile/personal")" class="nav-link @GetMainActiveClass("profile")">MY PROFILE</a>
+
+                <!-- DODANI PROFILE DROPDOWN -->
+                <div class="profile-dropdown">
+                    <a href="#" class="nav-link @GetMainActiveClass("profile") profile-link">MY PROFILE</a>
+                    <div class="profile-dropdown-content">
+                        <a href="@GetUrlWithParams("/profile/personal")">
+                            <i class="fas fa-user"></i> View My Profile
+                        </a>
+                        <a href="/login" @onclick="HandleLogout" @onclick:preventDefault="true">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
             </div>
         </nav>
     </div>
@@ -45,31 +57,21 @@
                         </a>
                     </li>
                 }
-                else if (CurrentSection == "my-plan")
+                else if (CurrentSection == "progress")
                 {
                     <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/my-plan/dashboard")" class="sidebar-link @GetActiveClass("/my-plan/dashboard")">
-                            Dashboard
+                        <a href="@GetUrlWithParams("/progress/info")" class="sidebar-link @GetActiveClass("/progress/info")">
+                            Progress Info
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/my-plan/create-plan")" class="sidebar-link @GetActiveClass("/my-plan/create-plan")">
-                            Create New Plan
+                        <a href="@GetUrlWithParams("/progress/my-plan")" class="sidebar-link @GetActiveClass("/progress/my-plan")">
+                            View my plan
                         </a>
                     </li>
                     <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/my-plan/my-plans")" class="sidebar-link @GetActiveClass("/my-plan/my-plans")">
-                            My Plans
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/my-plan/progress")" class="sidebar-link @GetActiveClass("/my-plan/progress")">
+                        <a href="@GetUrlWithParams("/progress/progress")" class="sidebar-link @GetActiveClass("/progress/progress")">
                             Progress Tracking
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/my-plan/statistics")" class="sidebar-link @GetActiveClass("/my-plan/statistics")">
-                            Statistics
                         </a>
                     </li>
                 }
@@ -201,9 +203,9 @@
     {
         var pageNames = new[] {
             "daily-training", "training-history", "view-all",
-            "dashboard", "create-plan", "my-plans", "progress", "statistics",
+            "info", "create-plan", "my-plans", "progress", "statistics",
             "today", "add", "history", "recipes", "nutrition", "shopping",
-            "personal", "physical", "preferences", "account", "notifications"
+            "personal", "physical", "preferences", "account", "notifications", "my-plan"
         };
         return pageNames.Contains(segment);
     }
@@ -216,8 +218,8 @@
 
             if (currentPath.StartsWith("workouts"))
                 return "workouts";
-            else if (currentPath.StartsWith("my-plan"))
-                return "my-plan";
+            else if (currentPath.StartsWith("progress"))
+                return "progress";
             else if (currentPath.StartsWith("meals"))
                 return "meals";
             else if (currentPath.StartsWith("profile"))
@@ -232,7 +234,7 @@
         return CurrentSection switch
         {
             "workouts" => "Workouts",
-            "my-plan" => "My Plan",
+            "progress" => "Progress",
             "meals" => "Meals",
             "profile" => "Profile",
             _ => "Navigation"
@@ -258,6 +260,13 @@
             return $"{baseUrl}?userId={userId}&userName={userName}";
         }
         return baseUrl;
+    }
+
+    // DODANA LOGOUT METODA
+    private void HandleLogout()
+    {
+        // Možete dodati dodatnu logiku za cleanup session-a ovde ako je potrebno
+        NavigationManager.NavigateTo("/login", true);
     }
 
     [Parameter]

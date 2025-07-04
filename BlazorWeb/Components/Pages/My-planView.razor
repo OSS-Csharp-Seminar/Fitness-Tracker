@@ -1,0 +1,448 @@
+﻿@page "/progress/my-plan"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enum
+@inject IWorkoutService WorkoutService
+@inject IWorkoutCatalogService WorkoutCatalogService
+@inject IWorkoutPlanService WorkoutPlanService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>My Workout Plan - PushApps</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h3 style="color:black; font-weight:bold">My Workout Plan</h3>
+            <p class="text-muted">Overview of your current fitness journey</p>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center p-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading your workout plan...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5>Error</h5>
+            <p>@errorMessage</p>
+            <button class="btn btn-primary" @onclick="LoadPlanData">Reload</button>
+        </div>
+    }
+    else if (currentPlan == null)
+    {
+        <div class="alert alert-warning text-center">
+            <h5><i class="fas fa-exclamation-triangle"></i> No Active Workout Plan</h5>
+            <p>You don't have an active workout plan yet. Create one to start your fitness journey!</p>
+            <button class="btn btn-success btn-lg" @onclick="CreateNewPlan">
+                <i class="fas fa-plus"></i> Create Workout Plan
+            </button>
+        </div>
+    }
+    else
+    {
+        <!-- Plan Overview Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <h5 class="mb-0 text-white">
+                            <i class="fas fa-dumbbell"></i> Current Plan Overview
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-calendar-alt text-primary me-3 fa-lg"></i>
+                                            <div>
+                                                <small class="text-muted">Started</small>
+                                                <div class="fw-bold">@currentPlan.StartDate.ToString("MMM dd, yyyy")</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-target text-success me-3 fa-lg"></i>
+                                            <div>
+                                                <small class="text-muted">Target Weight</small>
+                                                <div class="fw-bold">@currentPlan.TargetWeight kg</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-clock text-info me-3 fa-lg"></i>
+                                            <div>
+                                                <small class="text-muted">Daily Duration</small>
+                                                <div class="fw-bold">@currentPlan.TrainingDuration.ToString(@"h\:mm") hours</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-calendar-week text-warning me-3 fa-lg"></i>
+                                            <div>
+                                                <small class="text-muted">Training Days</small>
+                                                <div class="fw-bold">@currentPlan.TrainingDays days/week</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="bg-light rounded p-3">
+                                    <div class="display-6 fw-bold text-primary">@daysSinceStart</div>
+                                    <small class="text-muted">Days Active</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center bg-light">
+                        <div class="mb-2">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                        <div class="display-5 fw-bold text-dark">@totalWorkouts</div>
+                        <div class="text-uppercase fw-bold text-muted small">Workouts Completed</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center bg-light">
+                        <div class="mb-2">
+                            <i class="fas fa-dumbbell fa-2x text-primary"></i>
+                        </div>
+                        <div class="display-5 fw-bold text-dark">@uniqueExercises</div>
+                        <div class="text-uppercase fw-bold text-muted small">Different Exercises</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center bg-light">
+                        <div class="mb-2">
+                            <i class="fas fa-clock fa-2x text-info"></i>
+                        </div>
+                        <div class="display-5 fw-bold text-dark">@totalDurationFormatted</div>
+                        <div class="text-uppercase fw-bold text-muted small">Total Time</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center bg-light">
+                        <div class="mb-2">
+                            <i class="fas fa-fire fa-2x text-danger"></i>
+                        </div>
+                        <div class="display-5 fw-bold text-dark">@totalCaloriesBurned</div>
+                        <div class="text-uppercase fw-bold text-muted small">Calories Burned</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-chart-line text-primary"></i> Weekly Progress
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-6">
+                                <div class="h2 text-success fw-bold">@thisWeekWorkouts</div>
+                                <small class="text-muted">This Week</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h2 text-primary fw-bold">@currentPlan.TrainingDays</div>
+                                <small class="text-muted">Target/Week</small>
+                            </div>
+                        </div>
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar bg-success"
+                                 role="progressbar"
+                                 style="width: @weeklyProgressPercentage%"
+                                 aria-valuenow="@thisWeekWorkouts"
+                                 aria-valuemin="0"
+                                 aria-valuemax="@currentPlan.TrainingDays">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <span class="badge bg-success">@weeklyProgressPercentage% Complete</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-fire text-orange"></i> Workout Streak
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="display-4 fw-bold" style="color: #ff6b35;">@workoutStreak</div>
+                        <p class="mb-2 fw-bold">Days in a row</p>
+                        @if (workoutStreak > 0)
+                        {
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-trophy"></i> Keep the streak alive!
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Start your streak today!</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Schedule -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-calendar-week text-info"></i> Your Training Schedule
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Weekly training days based on your @currentPlan.TrainingDays days per week plan:</p>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            @foreach (var day in trainingDays)
+                            {
+                                <span class="badge bg-primary p-2 fs-6">@day</span>
+                            }
+                        </div>
+                        @if (trainingDays.Contains(DateTime.Now.DayOfWeek.ToString()))
+                        {
+                            <div class="alert alert-success border-0 mb-0">
+                                <i class="fas fa-calendar-check"></i>
+                                <strong>Today is a training day! Ready to workout?</strong>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info border-0 mb-0">
+                                <i class="fas fa-bed"></i>
+                                <strong>Today is a rest day. Recovery is important too!</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private User currentUser = null;
+    private WorkoutPlan currentPlan = null;
+    private List<Workout> completedWorkouts = new List<Workout>();
+    private List<WorkoutCatalog> workoutCatalogItems = new List<WorkoutCatalog>();
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+
+    private int totalWorkouts = 0;
+    private int uniqueExercises = 0;
+    private string totalDurationFormatted = "0:00h";
+    private int totalCaloriesBurned = 0;
+    private int thisWeekWorkouts = 0;
+    private int workoutStreak = 0;
+    private int daysSinceStart = 0;
+    private int weeklyProgressPercentage = 0;
+    private List<string> trainingDays = new List<string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadPlanData();
+    }
+
+    private async Task LoadPlanData()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            else
+            {
+                var uri = new Uri(NavigationManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+                if (query.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out userGuid))
+                {
+                    currentUser = await UserService.GetByIdAsync(userGuid);
+                }
+                else
+                {
+                    errorMessage = "User not found. Please log in again.";
+                    return;
+                }
+            }
+
+            if (currentUser != null)
+            {
+                var userPlans = await WorkoutPlanService.GetByUser(currentUser);
+                currentPlan = userPlans.OrderByDescending(p => p.StartDate).FirstOrDefault();
+
+                if (currentPlan != null)
+                {
+                    completedWorkouts = await WorkoutPlanService.GetWorkoutHistory(currentUser);
+
+                    await LoadExerciseDetails();
+
+                    CalculateStatistics();
+                    CalculateTrainingDays();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading plan data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadExerciseDetails()
+    {
+        var catalogIds = completedWorkouts.Select(w => w.CatalogId).Distinct().ToList();
+        workoutCatalogItems = new List<WorkoutCatalog>();
+
+        foreach (var catalogId in catalogIds)
+        {
+            var exercise = await WorkoutCatalogService.GetExerciseById(catalogId);
+            if (exercise != null)
+            {
+                workoutCatalogItems.Add(exercise);
+            }
+        }
+    }
+
+    private void CalculateStatistics()
+    {
+        totalWorkouts = completedWorkouts.Count;
+        uniqueExercises = completedWorkouts.Select(w => w.CatalogId).Distinct().Count();
+
+        var totalDuration = completedWorkouts.Sum(w => w.Duration.TotalMinutes);
+        var hours = (int)(totalDuration / 60);
+        var minutes = (int)(totalDuration % 60);
+        totalDurationFormatted = $"{hours}:{minutes:D2}h";
+
+        totalCaloriesBurned = completedWorkouts.Sum(w =>
+        {
+            var exercise = workoutCatalogItems.FirstOrDefault(e => e.Id == w.CatalogId);
+            return exercise?.CaloriesBurned ?? 0;
+        });
+
+        var startOfWeek = DateTime.Now.AddDays(-(int)DateTime.Now.DayOfWeek);
+        var thisWeekWorkoutsData = completedWorkouts.Where(w =>
+            w.Date >= DateOnly.FromDateTime(startOfWeek)).ToList();
+        thisWeekWorkouts = thisWeekWorkoutsData.Count;
+
+        if (currentPlan != null && currentPlan.TrainingDays > 0)
+        {
+            weeklyProgressPercentage = Math.Min(100, (thisWeekWorkouts * 100) / currentPlan.TrainingDays);
+        }
+
+        CalculateWorkoutStreak();
+        if (currentPlan != null)
+        {
+            daysSinceStart = (DateTime.Now - currentPlan.StartDate).Days;
+        }
+    }
+
+    private void CalculateWorkoutStreak()
+    {
+        workoutStreak = 0;
+        var currentDate = DateTime.Now.Date;
+
+        while (true)
+        {
+            var hasWorkout = completedWorkouts.Any(w => w.Date == DateOnly.FromDateTime(currentDate));
+
+            if (hasWorkout)
+            {
+                workoutStreak++;
+                currentDate = currentDate.AddDays(-1);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    private void CalculateTrainingDays()
+    {
+        if (currentPlan == null) return;
+
+        trainingDays = new List<string>();
+
+        switch (currentPlan.TrainingDays)
+        {
+            case 1:
+                trainingDays.Add("Monday");
+                break;
+            case 2:
+                trainingDays.AddRange(new[] { "Monday", "Thursday" });
+                break;
+            case 3:
+                trainingDays.AddRange(new[] { "Monday", "Wednesday", "Friday" });
+                break;
+            case 4:
+                trainingDays.AddRange(new[] { "Monday", "Tuesday", "Thursday", "Friday" });
+                break;
+            case 5:
+                trainingDays.AddRange(new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" });
+                break;
+            case 6:
+                trainingDays.AddRange(new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" });
+                break;
+            case 7:
+                trainingDays.AddRange(new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" });
+                break;
+        }
+    }
+
+    private void CreateNewPlan()
+    {
+        NavigationManager.NavigateTo($"/my-plan/create-plan?userId={currentUser?.Id}&userName={UserName}");
+    }
+}

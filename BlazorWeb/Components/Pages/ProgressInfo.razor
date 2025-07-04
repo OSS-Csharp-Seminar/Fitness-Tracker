@@ -1,0 +1,304 @@
+﻿@page "/progress/info"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@inject IUserService UserService
+@inject IUserPhysiqueService UserPhysiqueService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>Progress Info - PushApps</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h3 style="color:black; font-weight:bold">Your Progress</h3>
+            <p class="text-muted">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center p-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading your progress...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5>Error</h5>
+            <p>@errorMessage</p>
+            <button class="btn btn-primary" @onclick="LoadUserData">Reload</button>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- Prvi div - Motivacijska slika i poruka o napretku -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            @if (currentUser != null && currentUser.Gender.ToString().ToLower() == "female")
+                            {
+                                <img src="/ProgressImages/MotivationWomen.png" alt="Motivation" class="img-fluid rounded" style="max-height: 200px;" />
+                            }
+                            else
+                            {
+                                <img src="/ProgressImages/MotivationMen.png" alt="Motivation" class="img-fluid rounded" style="max-height: 200px;" />
+                            }
+                        </div>
+                        <div class="progress-message">
+                            <h5 style="color: #007bff; font-weight: bold;">@progressMessage</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drugi div - BMI informacije -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-light text-center">
+                        <h6 class="mb-0 text-muted">
+                            <i class="fas fa-chart-pie"></i> BMI Calculator Reference
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <img src="/ProgressImages/Bmi.png" alt="BMI Chart" class="img-fluid rounded" style="max-height: 150px;" />
+                        </div>
+                        <small class="text-muted">General BMI Categories Chart</small>
+
+                        <!-- Separator -->
+                        <hr class="my-4">
+
+                        <!-- Personal BMI Data -->
+                        <div class="personal-bmi-section">
+                            <h4 style="color:#28a745; font-weight:bold; margin-bottom: 15px;">
+                                <i class="fas fa-user"></i> YOUR BMI
+                            </h4>
+                            <div class="bmi-display bg-light rounded p-3">
+                                <h1 class="display-3 text-primary font-weight-bold mb-2">@currentBMI</h1>
+                                <p class="text-muted mb-0">Your Current BMI Index</p>
+                            </div>
+                            <div class="mt-3 p-2 bg-light rounded">
+                                <small class="text-muted">
+                                    @if (currentUser != null)
+                                    {
+                                        <div><strong>Height:</strong> @currentUser.Height cm</div>
+                                        <div><strong>Weight:</strong> @currentWeight kg</div>
+                                    }
+                                    else
+                                    {
+                                        <div><strong>Height:</strong> 0 cm</div>
+                                        <div><strong>Weight:</strong> @currentWeight kg</div>
+                                    }
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-weight"></i> Update Weight
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-3">
+                            <label for="newWeight" class="form-label">
+                                <strong>New Weight (kg):</strong>
+                            </label>
+                            <input type="number"
+                                   step="0.1"
+                                   min="30"
+                                   max="300"
+                                   class="form-control form-control-lg"
+                                   id="newWeight"
+                                   @bind="newWeight"
+                                   placeholder="Enter your new weight" />
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(updateMessage))
+                        {
+                            <div class="alert @(updateSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show">
+                                <i class="fas @(updateSuccess ? "fa-check-circle" : "fa-exclamation-triangle")"></i>
+                                @updateMessage
+                                <button type="button" class="btn-close" @onclick="ClearUpdateMessage"></button>
+                            </div>
+                        }
+
+                        <div class="d-grid mb-3">
+                            <button class="btn btn-success btn-lg"
+                                    @onclick="UpdateWeight"
+                                    disabled="@(isUpdating || newWeight <= 0)">
+                                @if (isUpdating)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Updating...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save"></i>
+                                    <span style="color:black;">Update Weight</span>
+                                }
+                            </button>
+                        </div>
+
+                        <div class="text-center bg-light rounded p-2">
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i>
+                                <strong>Last updated:</strong> @(latestPhysique?.Date.ToString("dd/MM/yyyy") ?? "Never")
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private User currentUser = null;
+    private UserPhysique latestPhysique = null;
+    private string progressMessage = string.Empty;
+    private int currentBMI = 0;
+    private float currentWeight = 0;
+    private float newWeight = 0;
+    private bool isLoading = true;
+    private bool isUpdating = false;
+    private bool updateSuccess = false;
+    private string errorMessage = string.Empty;
+    private string updateMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadUserData();
+    }
+
+    private async Task LoadUserData()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            else
+            {
+                var uri = new Uri(NavigationManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+                if (query.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out userGuid))
+                {
+                    currentUser = await UserService.GetByIdAsync(userGuid);
+                }
+                else
+                {
+                    errorMessage = "User not found. Please log in again.";
+                    return;
+                }
+            }
+
+            if (currentUser != null)
+            {
+                latestPhysique = await UserPhysiqueService.GetLatestPhysique(currentUser.Id);
+
+                if (latestPhysique != null)
+                {
+                    currentWeight = latestPhysique.Weight;
+                    if (latestPhysique.BMI > 0)
+                    {
+                        currentBMI = latestPhysique.BMI;
+                    }
+                    else
+                    {
+                        currentBMI = UserPhysiqueService.CalculateBMI(latestPhysique.Weight, currentUser);
+                    }
+                }
+                else
+                {
+                    currentWeight = 0;
+                    currentBMI = 0;
+                }
+
+                progressMessage = await UserPhysiqueService.GetWeightProgressMessage(currentUser);
+
+                newWeight = currentWeight; 
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading user data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task UpdateWeight()
+    {
+        if (currentUser == null || newWeight <= 0)
+            return;
+
+        isUpdating = true;
+        updateMessage = string.Empty;
+
+        try
+        {
+            var newPhysique = await UserPhysiqueService.AddWeightMeasurement(
+                currentUser,
+                newWeight,
+                UserPhysiqueService.CalculateBMI(newWeight, currentUser)
+            );
+
+            if (newPhysique != null)
+            {
+                updateSuccess = true;
+                updateMessage = "Weight updated successfully!";
+
+                await LoadUserData();
+            }
+            else
+            {
+                updateSuccess = false;
+                updateMessage = "Failed to update weight. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            updateSuccess = false;
+            updateMessage = $"Error updating weight: {ex.Message}";
+        }
+        finally
+        {
+            isUpdating = false;
+        }
+    }
+
+    private void ClearUpdateMessage()
+    {
+        updateMessage = string.Empty;
+    }
+}

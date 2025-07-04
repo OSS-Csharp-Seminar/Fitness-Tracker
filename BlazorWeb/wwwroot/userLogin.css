@@ -269,13 +269,84 @@ body, html {
         font-size: 1rem;
         font-weight;
     }
-    @media (max-width: 768px) {
-            .content-wrapper {
-                flex-direction: column;
-            }
 
-            .sidebar {
-                width: 100%;
-                margin-bottom: 1rem;
-            }
-        }
+@media (max-width: 768px) {
+    .content-wrapper {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+}
+
+/* DODANI DROPDOWN STILOVI */
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--darker-bg);
+    min-width: 180px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    z-index: 1000;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    top: 100%;
+    right: 0;
+    margin-top: 2px;
+}
+
+    .profile-dropdown:hover .profile-dropdown-content,
+    .profile-dropdown-content:hover {
+        display: block;
+        animation: fadeIn 0.2s ease-in;
+    }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-dropdown-content a {
+    color: var(--light-text) !important;
+    padding: 10px 14px;
+    text-decoration: none;
+    display: block;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: transparent !important;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+    .profile-dropdown-content a:last-child {
+        border-bottom: none;
+    }
+
+    .profile-dropdown-content a:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: var(--secondary-color) !important;
+        padding-left: 18px;
+    }
+
+.profile-dropdown-content i {
+    margin-right: 8px;
+    width: 14px;
+    font-size: 0.8rem;
+}
+
+.profile-link {
+    cursor: pointer;
+}

@@ -12,8 +12,8 @@ namespace Infrastructure.Repositories
         public override async Task<UserPhysique> GetByIdAsync(Guid id)
         {
             return await _context.UserPhysiques
-            .Include(x => x.User)
-            .FirstOrDefaultAsync(x => x.Id == id);
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public override async Task<IEnumerable<UserPhysique>> GetAllAsync()
@@ -23,12 +23,13 @@ namespace Infrastructure.Repositories
                 .OrderByDescending(x => x.Date)
                 .ToListAsync();
         }
-        public async Task<IQueryable<UserPhysique>> GetByUserId(Guid id)
+
+        public async Task<IQueryable<UserPhysique>> GetByUserId(Guid userId)
         {
             var query = _context.UserPhysiques
                 .Include(x => x.User)
-                .Where(x => x.Id == id)
-                .OrderByDescending(x => x.UserId);
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Date);
 
             return await Task.FromResult(query);
         }
@@ -36,23 +37,36 @@ namespace Infrastructure.Repositories
         public async Task<UserPhysique> GetLatestAsync(User user)
         {
             return await _context.UserPhysiques
-                .Where(x => x.User == user)
+                .Where(x => x.UserId == user.Id)
                 .OrderByDescending(x => x.Date)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<decimal> GetWeightProgressAsync(Guid userId, int days = 30)
+        // NOVA METODA
+        public async Task<UserPhysique> GetLatestByUserIdAsync(Guid userId)
         {
-            var lastTwoDartes = await _context.UserPhysiques
+            return await _context.UserPhysiques
+                .Include(x => x.User)
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.Date)
-                .Take(2)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<decimal> GetWeightProgressAsync(Guid userId)
+        {
+            var allRecords = await _context.UserPhysiques
+                .Where(x => x.UserId == userId)
+                .OrderBy(x => x.Date) 
                 .ToListAsync();
 
-            var lastWeight = lastTwoDartes[0].Weight;
-            var previousWeight = lastTwoDartes[1].Weight;
+            if (allRecords.Count < 2)
+                return 0;
 
-            return (decimal)(lastWeight - previousWeight);
+            var firstWeight = allRecords.First().Weight;  
+            var lastWeight = allRecords.Last().Weight;    
+
+            // Vraća razliku: zadnji - prvi (negativno = gubitak, pozitivno = dobitak)
+            return (decimal)(lastWeight - firstWeight);
         }
     }
 }

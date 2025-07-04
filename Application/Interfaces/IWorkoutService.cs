@@ -17,4 +17,4 @@ namespace Application.Interfaces
         Task<int> GetTodayCompletedCount(User user);
         Task<List<Workout>> GetByDateAsync(DateOnly date);
     }
-}
+}   

@@ -1,68 +1,256 @@
-﻿.hero-content-wrapper::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('/HomePicture.png');
-    background-size: cover;
-    background-position: center;
-    opacity: 0.15;
-    z-index: 0;
+﻿:root {
+    --primary-color: #5928e5;
+    --secondary-color: #e5289a;
+    --dark-bg: #121212;
+    --darker-bg: #0a0a0a;
+    --light-text: #f5f5f5;
+    --gray-text: #b0b0b0;
+    --mate-color: #03e3fc;
+    --sidebar-color: #0297a5;
 }
 
-.main-content {
+.hero-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--mate-color);
+    color: var(--light-text);
+}
+
+.nav-container {
+    width: 100%;
+    background-color: var(--darker-bg) !important;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.5rem;
+    background-color: var(--darker-bg) !important;
+}
+
+.navbar-brand {
+    font-size: 1.4rem;
+    font-weight: 700;
+    background-color: var(--darker-bg) !important;
+}
+
+    .navbar-brand a {
+        color: var(--light-text) !important;
+        text-decoration: none;
+        transition: color 0.3s ease;
+        background-color: transparent !important;
+    }
+
+        .navbar-brand a:hover {
+            color: var(--secondary-color) !important;
+        }
+
+.navbar-links {
+    display: flex;
+    gap: 1.5rem;
+    background-color: var(--darker-bg) !important;
+}
+
+.nav-link {
+    color: var(--light-text) !important;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+    background-color: transparent !important;
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+    .nav-link:hover {
+        color: var(--secondary-color) !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+.hero-content-wrapper {
+    position: relative;
     flex: 1;
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mate-color);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     max-width: 1200px;
     width: 100%;
-    margin: 2rem auto;
-    padding: 2rem 1rem;
-    background-color: white !important;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    height: 100%;
 }
 
-    .main-content h3 {
+.hero-text {
+    flex: 1;
+    padding-right: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hero-visual {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+    .hero-visual img {
+        max-width: 120%;
+        height: auto;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transform: scale(1.2);
+    }
+
+.hero-text h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+}
+
+.hero-text h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #ffffff !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    margin-bottom: 1rem;
+}
+
+.hero-text p {
+    font-size: 1.2rem;
+    color: #ffffff !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    margin-bottom: 2rem;
+    line-height: 1.5;
+    max-width: 800px;
+}
+
+/* STILOVI ZA PAGE CONTENT (login, register stranice) */
+.page-content {
+    max-width: 600px;
+    width: 100%;
+    background-color: white;
+    border-radius: 12px;
+    padding: 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    margin: 2rem;
+}
+
+    .page-content h3 {
         color: var(--dark-bg) !important;
-        background-color: transparent !important;
-        margin-bottom: 2rem;
         text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
     }
 
-    .main-content label {
+    .page-content .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .page-content label {
         color: var(--dark-bg) !important;
-        background-color: transparent !important;
         font-weight: 500;
+        margin-bottom: 0.5rem;
+        display: block;
     }
 
-    .main-content .form-control {
-        background-color: #f8f9fa !important;
-        border: 1px solid #dee2e6 !important;
-        color: var(--dark-bg) !important;
-        border-radius: 6px;
+    .page-content .form-control {
+        width: 100%;
         padding: 0.75rem;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        font-size: 1rem;
+        background-color: #f8f9fa;
     }
 
-    .main-content .btn-primary {
+        .page-content .form-control:focus {
+            border-color: var(--mate-color);
+            box-shadow: 0 0 0 0.2rem rgba(3, 227, 252, 0.25);
+            outline: none;
+        }
+
+    .page-content .btn-primary {
         background-color: var(--mate-color) !important;
         border-color: var(--mate-color) !important;
         color: white !important;
         font-weight: 600;
         padding: 0.75rem 2rem;
         border-radius: 6px;
+        width: 100%;
+        font-size: 1.1rem;
     }
 
-    .main-content * {
-        background-color: transparent !important;
-    }
-
-    .main-content .form-control,
-    .main-content .card,
-    .main-content {
-        background-color: white !important;
-    }
-
-        .main-content .card {
-            background-color: #f8f9fa !important;
+        .page-content .btn-primary:hover {
+            background-color: #02c4d9 !important;
+            border-color: #02c4d9 !important;
         }
+
+    .page-content .alert {
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
+
+    .page-content .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .page-content .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+    .hero-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .hero-text {
+        padding-right: 0;
+        padding-bottom: 2rem;
+        justify-content: center;
+    }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+        }
+
+        .hero-text h2 {
+            font-size: 1.5rem;
+        }
+
+        .hero-text p {
+            font-size: 1rem;
+        }
+
+    .page-content {
+        margin: 1rem;
+        padding: 2rem;
+    }
+}
