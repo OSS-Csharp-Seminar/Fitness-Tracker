@@ -41,6 +41,7 @@ builder.Services.AddScoped<IUserPhysiqueRepository, UserPhysiqueRepository>();
 builder.Services.AddScoped<IWorkoutPlanRepository, WorkoutPlanRepository>();
 builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
 builder.Services.AddScoped<IWorkoutCatalogRepository, WorkoutCatalogRepository>();
+builder.Services.AddScoped<IMealRepository, MealRepository>();
 
 // Register All Services
 builder.Services.AddScoped<IUserService, UserService>();
@@ -48,6 +49,7 @@ builder.Services.AddScoped<IUserPhysiqueService, UserPhysiqueService>();
 builder.Services.AddScoped<IWorkoutPlanService, WorkoutPlanService>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IWorkoutCatalogService, WorkoutCatalogService>();
+builder.Services.AddScoped<IMealService, MealService>();
 
 
 var app = builder.Build();

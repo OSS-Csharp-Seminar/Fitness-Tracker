@@ -26,6 +26,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Calories")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("TEXT");
