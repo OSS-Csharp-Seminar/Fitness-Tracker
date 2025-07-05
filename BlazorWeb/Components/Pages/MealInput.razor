@@ -1,0 +1,129 @@
+﻿@page "/meals/today"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@inject IMealService MealService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>Today's Meals - PushApps</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h3 style="color:black; font-weight:bold">Today's Meals</h3>
+        <p class="text-muted">Add your meals and track your daily intake.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 style="color:black; font-weight:bold">Add New Meal</h5>
+    </div>
+    <div class="card-body">
+        <EditForm Model="newMeal" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <InputText class="form-control" @bind-Value="newMeal.Description" required />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Calories</label>
+                <InputNumber class="form-control" @bind-Value="newMeal.Calories" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Meal
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@if (todayMeals.Any())
+{
+    <div class="row">
+        <div class="col-12">
+            <h5 style="color:black; font-weight:bold">
+                Meals Today
+                <span class="badge bg-light text-dark border border-secondary">Total: @todayMeals.Sum(m => m.Calories) kcal</span>
+            </h5>
+        </div>
+
+        <div class="col-12">
+            <ul class="list-group">
+                @foreach (var meal in todayMeals)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>@meal.Description - @meal.Calories kcal</strong>
+                            <span class="text-muted d-block small">@meal.CreatedAt.ToShortTimeString()</span>
+                        </div>
+                        <span class="badge bg-primary">@meal.Calories kcal</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center">
+        <i class="fas fa-utensils fa-2x mb-2"></i>
+        <p>No meals added yet today.</p>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    private User currentUser;
+    private Meal newMeal = new();
+    private List<Meal> todayMeals = new();
+    private bool isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadUserAndMeals();
+    }
+
+    private async Task LoadUserAndMeals()
+    {
+        isLoading = true;
+
+        if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+        {
+            currentUser = await UserService.GetByIdAsync(userGuid);
+        }
+
+        if (currentUser == null)
+            return;
+
+        var allMeals = await MealService.GetByUserId(currentUser.Id);
+        var today = DateOnly.FromDateTime(DateTime.Now);
+
+        todayMeals = allMeals
+            .Where(m => DateOnly.FromDateTime(m.CreatedAt) == today)
+            .OrderByDescending(m => m.CreatedAt)
+            .ToList();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (currentUser == null)
+            return;
+
+        newMeal.Id = Guid.NewGuid();
+        newMeal.UserId = currentUser.Id;
+        newMeal.CreatedAt = DateTime.Now;
+
+        await MealService.CreateMeal(newMeal);
+        newMeal = new Meal(); // reset form
+
+        await LoadUserAndMeals();
+        StateHasChanged();
+    }
+}

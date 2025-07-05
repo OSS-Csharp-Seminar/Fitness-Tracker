@@ -1,0 +1,191 @@
+﻿@page "/meals/history"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@inject IMealService MealService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>Meal History - PushApps</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h3 style="color:black; font-weight:bold">Meal History</h3>
+        <p class="text-muted">Your daily food and drink logs</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 style="color:black; font-weight:bold"><i class="fas fa-search"></i> Filter by Date</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="fromDate" class="form-label">From:</label>
+                        <input type="date" id="fromDate" @bind="fromDateFilter" class="form-control" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="toDate" class="form-label">To:</label>
+                        <input type="date" id="toDate" @bind="toDateFilter" class="form-control" />
+                    </div>
+                    <div class="col-md-4 mb-3 d-flex align-items-end">
+                        <div class="btn-group w-100">
+                            <button class="btn btn-primary" @onclick="ApplyFilter">
+                                <i class="fas fa-filter"></i> Apply
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ClearFilter">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p>Loading meal history...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (!meals.Any())
+{
+    <div class="alert alert-warning text-center">
+        <h5><i class="fas fa-utensils"></i> No Meal History</h5>
+        <p>No meals logged for the selected period.</p>
+    </div>
+}
+else
+{
+    @foreach (var dateGroup in groupedMeals)
+    {
+        <div class="mb-4">
+            <h5 style="color:black; font-weight:bold">
+                @dateGroup.Key.ToString("dddd, MMMM dd, yyyy")
+                <span class="badge bg-light text-dark border border-secondary">Total: @dateGroup.Sum(m => m.Calories) kcal</span>
+            </h5>
+
+            <div class="card mb-2" style="border-left: 5px solid #198754;">
+                <ul class="list-group list-group-flush">
+                    @foreach (var meal in dateGroup)
+                    {
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>@meal.Description - @meal.Calories kcal</strong>
+                                    <div class="text-muted small">@(meal.CreatedAt.ToShortTimeString())</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success">@meal.Calories kcal</span>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    private User currentUser;
+    private List<Meal> meals = new();
+    private IEnumerable<IGrouping<DateOnly, Meal>> groupedMeals = Enumerable.Empty<IGrouping<DateOnly, Meal>>();
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+
+    private DateTime? fromDateFilter = null;
+    private DateTime? toDateFilter = null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadUserAndMeals();
+    }
+
+    private async Task LoadUserAndMeals()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+
+            if (currentUser != null)
+            {
+                await LoadMeals();
+            }
+            else
+            {
+                errorMessage = "User not found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadMeals()
+    {
+        if (currentUser == null) return;
+
+        try
+        {
+            var allMeals = await MealService.GetByUserId(currentUser.Id);
+
+            if (fromDateFilter.HasValue)
+            {
+                allMeals = allMeals.Where(m => m.CreatedAt.Date >= fromDateFilter.Value.Date).ToList();
+            }
+
+            if (toDateFilter.HasValue)
+            {
+                allMeals = allMeals.Where(m => m.CreatedAt.Date <= toDateFilter.Value.Date).ToList();
+            }
+
+            meals = allMeals.OrderByDescending(m => m.CreatedAt).ToList();
+
+            groupedMeals = meals
+                .GroupBy(m => DateOnly.FromDateTime(m.CreatedAt))
+                .OrderByDescending(g => g.Key);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load meals: {ex.Message}";
+        }
+    }
+
+    private async Task ApplyFilter()
+    {
+        await LoadMeals();
+    }
+
+    private async Task ClearFilter()
+    {
+        fromDateFilter = null;
+        toDateFilter = null;
+        await LoadMeals();
+    }
+}
