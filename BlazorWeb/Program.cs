@@ -51,7 +51,6 @@ builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IWorkoutCatalogService, WorkoutCatalogService>();
 builder.Services.AddScoped<IMealService, MealService>();
 
-
 var app = builder.Build();
 
 // Create database and initialize roles

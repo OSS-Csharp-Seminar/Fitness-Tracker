@@ -26,8 +26,16 @@
             <ValidationSummary />
 
             <div class="mb-3">
-                <label class="form-label">Description</label>
-                <InputText class="form-control" @bind-Value="newMeal.Description" required />
+                <label for="mealInput" class="form-label">Description</label>
+                <!--<InputText class="form-control" @bind-Value="newMeal.Description" required />-->
+                <input list="mealOptions" id="mealInput" class="form-control" 
+                    @bind="newMeal.Description" @oninput="OnMealInputChanged" placeholder="Start typing..." required />
+                <datalist id="mealOptions">
+                    @foreach (var meal in recentMeals)
+                    {
+                        <option value="@meal.Description"></option>
+                    }
+                </datalist>
             </div>
 
             <div class="mb-3">
@@ -84,6 +92,23 @@ else
     private Meal newMeal = new();
     private List<Meal> todayMeals = new();
     private bool isLoading = true;
+    private List<Meal> recentMeals = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+        {
+            currentUser = await UserService.GetByIdAsync(userGuid);
+
+            var allMeals = await MealService.GetByUserId(currentUser.Id);
+            recentMeals = allMeals
+                .GroupBy(m => m.Description)
+                .Select(g => g.First())
+                .ToList();
+        }
+
+        await LoadUserAndMeals();
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -109,6 +134,15 @@ else
             .Where(m => DateOnly.FromDateTime(m.CreatedAt) == today)
             .OrderByDescending(m => m.CreatedAt)
             .ToList();
+    }
+
+    private void OnMealInputChanged(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString();
+        var matchedMeal = recentMeals.FirstOrDefault(m => m.Description.Equals(input, StringComparison.OrdinalIgnoreCase));
+
+        if (matchedMeal != null)
+            newMeal.Calories = matchedMeal.Calories;
     }
 
     private async Task HandleValidSubmit()
