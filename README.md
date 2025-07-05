@@ -1,8 +1,7 @@
 # Push-Apps – Workout & Nutrition Companion   
 
 ## 📌 Overview  
-Push-Apps is a web-based fitness application built with **ASP.NET Core** that helps users track workouts, estimate calorie burn, and access premium fitness and nutrition plans. The platform supports **free users** with basic tracking features and **premium users** with trainer consultations and meal plans.
-
+Push-Apps is a web-based fitness application built with **ASP.NET Core** that helps users make plans, track workouts, track daily intake and estimate calorie burn.
 
 
 Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt 
@@ -12,25 +11,18 @@ Team: Teo Knezović, Silvestar Bratinčević, Mihaela Bolt
 ## 🚀 Features  
 
 ### **1️⃣ User Data (Authentication & Profiles)**
-- ✅ **User Authentication**: Secure login & registration (Free & Premium roles).  
-- ✅ **Profile Management**: Edit weight, age, fitness goals, and preferences.  
-- ✅ **Workout & Progress Tracking**: Log workouts and track calorie burn.  
-- ✅ **Subscription Management**: Upgrade, cancel, or renew premium plans.  
+- ✅ **User Authentication**: Secure login & registration.  
+- ✅ **Profile Management**: Edit weight, age, fitness goals and health issues.  
+- ✅ **Workout & Progress Tracking**: Log workouts and track calorie burn.
 
-### **2️⃣ Trainings (Workout Logging & Programs)**
-- 🏋️ **Workout Logger**: Log exercise type, duration, and intensity.  
-- 🔥 **Calorie Burn Calculator**: Estimate calories burned per workout.  
-- 📊 **Workout History & Analytics**: Track past workouts with charts.   
+### **2️⃣ Workouts**
+- 🏋️ **Workout Planner**: Log exercise type, duration, and intensity. Automatically generate daily routine or manually select from catalog.  
+- 🔥 **Calorie Burn Calculator**: Estimate calories burned per workout.
+- 📊 **Workout History & Analytics**: Track past workouts, BMI calculator and weight tracking.
 
-### **3️⃣ Food Menus (Meal Planning & Nutrition)**
+### **3️⃣ Meals**
 - 🍽️ **Basic Calorie Estimator**: Input meals & get estimated calories.  
-- **Custom meal recommendations** (weight loss, muscle gain, etc.).
-- Save favorite meals and track nutrition history.
-
-### **4️⃣ Trainers (Premium Feature)**
-- 🏅 **Trainer Directory**: Browse and select professional trainers.  
-- 💬 **Consultations**: Book chat sessions with trainers.
-- 📄 **Personalized Workout & Nutrition Plans**: Trainers provide tailored plans.  
+- **Meal history**: Track food intake over time.
 
 ---
 
