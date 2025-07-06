@@ -1,0 +1,431 @@
+﻿@page "/profile/view"
+@rendermode InteractiveServer
+@using Application.Interfaces
+@using Domain.Entities
+@using Domain.Enum
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@layout UserLoginLayout
+
+<PageTitle>My Profile - PushApps</PageTitle>
+
+<div class="row">
+    <div class="col-12">
+        <h3 style="color:black; font-weight:bold">My Profile</h3>
+        <p class="text-muted">View and edit your personal information</p>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading profile...</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <h5>Error</h5>
+        <p>@errorMessage</p>
+        <button class="btn btn-primary" @onclick="LoadUserProfile">Reload</button>
+    </div>
+}
+else if (currentUser != null)
+{
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = string.Empty"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 style="color:black; font-weight:bold">
+                        <i class="fas fa-user"></i> Personal Information
+                    </h5>
+                    @if (!isEditing)
+                    {
+                        <button class="btn btn-outline-primary" @onclick="StartEditing">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (!isEditing)
+                    {
+                        <!-- VIEW MODE -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label text-muted">Full Name:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">@currentUser.UserName</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Username:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">@currentUser.UserName</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Email:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">@currentUser.Email</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Birthday:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">
+                                    @(currentUser.Birthday != default ? currentUser.Birthday.ToString("MMMM dd, yyyy") : "Not set")
+                                    @if (currentUser.Birthday != default)
+                                    {
+                                        <span class="text-muted">(Age: @CalculateUserAge(currentUser))</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Height:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">
+                                    @(currentUser.Height > 0 ? $"{currentUser.Height} cm" : "Not set")
+                                    <small class="text-muted d-block">Height cannot be changed</small>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Gender:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">@GetGenderDisplayName(currentUser.Gender)</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted">Role:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">
+                                    <span class="badge bg-primary" style="color:black">@GetRoleDisplayName(currentUser.Role)</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label text-muted">Allergies:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">
+                                    @if (currentUser.Allergies?.Any() == true)
+                                    {
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var allergy in currentUser.Allergies)
+                                            {
+                                                <span class="badge bg-warning text-dark">@allergy</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">None</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label text-muted">Medical Diagnosis:</label>
+                                <p style="color:black; font-weight:bold" class="form-control-plaintext">
+                                    @if (currentUser.Diagnosis?.Any() == true)
+                                    {
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var diagnosis in currentUser.Diagnosis)
+                                            {
+                                                <span class="badge bg-info">@diagnosis</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">None</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- EDIT MODE -->
+                        <EditForm Model="editUser" OnValidSubmit="SaveChanges">
+                            <DataAnnotationsValidator />
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Username:</label>
+                                    <InputText @bind-Value="editUser.UserName" class="form-control" />
+                                    <ValidationMessage For="() => editUser.UserName" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Email:</label>
+                                    <InputText @bind-Value="editUser.Email" class="form-control" type="email" />
+                                    <ValidationMessage For="() => editUser.Email" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Birthday:</label>
+                                    <InputDate @bind-Value="birthdayEdit" class="form-control" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Gender:</label>
+                                    <InputSelect @bind-Value="editUser.Gender" class="form-select">
+                                        <option value="@Gender.Male">Male</option>
+                                        <option value="@Gender.Female">Female</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label text-muted">Height (cm):</label>
+                                    <div class="form-control bg-light">
+                                        @(currentUser.Height > 0 ? $"{currentUser.Height} cm" : "Not set")
+                                        <small class="text-muted d-block">Height cannot be changed</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label class="form-label">Allergies (comma separated):</label>
+                                    <InputText @bind-Value="allergiesText" class="form-control"
+                                               placeholder="e.g. peanuts, dairy, gluten" />
+                                    <small class="form-text text-muted">Separate multiple allergies with commas</small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label class="form-label">Medical Diagnosis (comma separated):</label>
+                                    <InputText @bind-Value="diagnosisText" class="form-control"
+                                               placeholder="e.g. diabetes, hypertension" />
+                                    <small class="form-text text-muted">Separate multiple conditions with commas</small>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="button" class="btn btn-outline-secondary me-2" @onclick="CancelEditing">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                                <button type="submit" class="btn btn-success" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <span>Saving...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-save"></i>
+                                        <span style="color:black">Save Changes</span>
+                                    }
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? UserName { get; set; }
+
+    private User currentUser = null;
+    private User editUser = new User();
+    private bool isLoading = true;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private DateTime birthdayEdit = DateTime.Now.AddYears(-25);
+    private string allergiesText = string.Empty;
+    private string diagnosisText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (!string.IsNullOrEmpty(UserId) && Guid.TryParse(UserId, out var userGuid))
+            {
+                currentUser = await UserService.GetByIdAsync(userGuid);
+            }
+            else
+            {
+                var uri = new Uri(NavigationManager.Uri);
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+                if (query.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out userGuid))
+                {
+                    currentUser = await UserService.GetByIdAsync(userGuid);
+                }
+                else
+                {
+                    errorMessage = "User not found. Please log in again.";
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading profile: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void StartEditing()
+    {
+        if (currentUser == null) return;
+
+        // Copy current user data to edit model
+        editUser = new User
+            {
+                Id = currentUser.Id,
+                UserName = currentUser.UserName,
+                Email = currentUser.Email,
+                Birthday = currentUser.Birthday,
+                Gender = currentUser.Gender,
+                Height = currentUser.Height, // Copy but won't be editable
+                Role = currentUser.Role,
+                Allergies = currentUser.Allergies?.ToList() ?? new List<string>(),
+                Diagnosis = currentUser.Diagnosis?.ToList() ?? new List<string>()
+            };
+
+        // Set edit fields
+        birthdayEdit = currentUser.Birthday != default ? currentUser.Birthday.ToDateTime(TimeOnly.MinValue) : DateTime.Now.AddYears(-25);
+        allergiesText = currentUser.Allergies?.Any() == true ? string.Join(", ", currentUser.Allergies) : string.Empty;
+        diagnosisText = currentUser.Diagnosis?.Any() == true ? string.Join(", ", currentUser.Diagnosis) : string.Empty;
+
+        isEditing = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private void CancelEditing()
+    {
+        isEditing = false;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private async Task SaveChanges()
+    {
+        if (editUser == null) return;
+
+        isSaving = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // Update birthday
+            editUser.Birthday = DateOnly.FromDateTime(birthdayEdit);
+
+            // Keep original height and role (don't change them)
+            editUser.Height = currentUser.Height;
+            editUser.Role = currentUser.Role;
+
+            // Update allergies
+            editUser.Allergies = string.IsNullOrWhiteSpace(allergiesText)
+                ? new List<string>()
+                : allergiesText.Split(',').Select(a => a.Trim()).Where(a => !string.IsNullOrEmpty(a)).ToList();
+
+            // Update diagnosis
+            editUser.Diagnosis = string.IsNullOrWhiteSpace(diagnosisText)
+                ? new List<string>()
+                : diagnosisText.Split(',').Select(d => d.Trim()).Where(d => !string.IsNullOrEmpty(d)).ToList();
+
+            await UserService.UpdateUserAsync(editUser);
+
+            // Update current user with new data (except height and role)
+            currentUser.UserName = editUser.UserName;
+            currentUser.Email = editUser.Email;
+            currentUser.Birthday = editUser.Birthday;
+            currentUser.Gender = editUser.Gender;
+            // Height and Role remain unchanged
+            currentUser.Allergies = editUser.Allergies;
+            currentUser.Diagnosis = editUser.Diagnosis;
+
+            successMessage = "Profile updated successfully!";
+            isEditing = false;
+
+            _ = Task.Delay(3000).ContinueWith(_ =>
+            {
+                successMessage = string.Empty;
+                InvokeAsync(StateHasChanged);
+            });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating profile: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private string GetGenderDisplayName(Gender gender)
+    {
+        return gender switch
+        {
+            Gender.Male => "Male",
+            Gender.Female => "Female",
+            _ => "Not specified"
+        };
+    }
+
+    private string GetRoleDisplayName(Role role)
+    {
+        return role switch
+        {
+            Role.User => "User",
+            Role.Admin => "Administrator",
+            _ => role.ToString()
+        };
+    }
+
+    private int CalculateUserAge(User user)
+    {
+        if (user == null || user.Birthday == default)
+            return 0;
+
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var age = today.Year - user.Birthday.Year;
+
+        if (today.DayOfYear < user.Birthday.DayOfYear)
+            age--;
+
+        return Math.Max(0, age);
+    }
+}

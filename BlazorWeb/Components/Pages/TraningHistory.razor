@@ -73,9 +73,6 @@ else if (!completedWorkouts.Any())
     <div class="alert alert-warning text-center">
         <h5><i class="fas fa-history"></i> No Training History</h5>
         <p>You haven't completed any workouts yet. Start training to build your history!</p>
-        <button class="btn btn-primary" @onclick="GoToTraining">
-            Start Training Now
-        </button>
     </div>
 }
 else
@@ -292,11 +289,6 @@ else
     private async Task ShowAllWorkouts()
     {
         await ClearFilter();
-    }
-
-    private void GoToTraining()
-    {
-        NavigationManager.NavigateTo($"/workouts/daily-training?userId={currentUser?.Id}&userName={UserName}");
     }
 
     private string GetWorkoutTypeDisplayName(WorkoutType workoutType)

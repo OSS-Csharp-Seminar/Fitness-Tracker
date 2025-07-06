@@ -9,6 +9,7 @@ namespace Application.Interfaces
         Task<User> CreateUserAsync(User user, string password);
         Task<(string UserId, string Username)> Login(string email, string password); // ISPRAVKA
         Task<User> GetByIdAsync(Guid id);
+        Task<bool> UpdateUserAsync(User user);
 
     }
 }

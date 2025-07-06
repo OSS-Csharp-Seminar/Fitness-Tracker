@@ -2,17 +2,15 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Routing
 @inject NavigationManager NavigationManager
-
 <PageTitle>PushApps - Fitness aplikacija</PageTitle>
 <HeadContent>
     <link rel="stylesheet" href="homepage-layout.css" />
 </HeadContent>
-
 <div class="hero-page">
     <div class="nav-container">
         <nav class="navbar">
             <div class="navbar-brand">
-                <NavLink href="/">PushApps</NavLink>
+                <span style="cursor: default;">PushApps</span>
             </div>
             <div class="navbar-links">
                 <NavLink href="/" class="nav-link">HOME</NavLink>
@@ -21,13 +19,11 @@
             </div>
         </nav>
     </div>
-
     <div class="hero-content-wrapper">
         @{
             var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
             var isHomePage = string.IsNullOrEmpty(currentPath) || currentPath == "/";
         }
-
         @if (isHomePage)
         {
             <!-- Homepage sa hero sadržajem -->
@@ -68,11 +64,9 @@
         }
     </div>
 </div>
-
 @code {
     [Parameter]
     public RenderFragment LeftContent { get; set; }
-
     [Parameter]
     public RenderFragment RightContent { get; set; }
 }

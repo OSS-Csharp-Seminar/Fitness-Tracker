@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces;
 using Domain.Entities;
 using Domain.Interfaces;
+
 namespace Application.Services
 {
     public class UserService : IUserService
@@ -53,7 +54,7 @@ namespace Application.Services
             if (!isPasswordValid)
                 throw new ArgumentException("Wrong password");
 
-            return (user.Id.ToString(), user.UserName); 
+            return (user.Id.ToString(), user.UserName);
         }
 
         public async Task<User> GetByIdAsync(Guid id)
@@ -66,6 +67,23 @@ namespace Application.Services
                 throw new KeyNotFoundException($"User with ID: {id} does not exist!");
 
             return user;
+        }
+        public async Task<bool> UpdateUserAsync(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            if (user.Id == Guid.Empty)
+                throw new ArgumentException("User ID is required");
+
+            try
+            {
+                return await _userRepository.UpdateAsync(user);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to update user: {ex.Message}", ex);
+            }
         }
 
         public int CalculateAge(User user)

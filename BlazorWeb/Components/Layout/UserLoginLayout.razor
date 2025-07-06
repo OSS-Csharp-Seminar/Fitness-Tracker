@@ -5,27 +5,24 @@
 
 <PageTitle>PushApps - Fitness aplikacija</PageTitle>
 <HeadContent>
-    <link rel="stylesheet" href="/userlogin1.css" />
+    <link rel="stylesheet" href="/userlogin.css" />
 </HeadContent>
 
 <div class="hero-page">
     <div class="nav-container">
         <nav class="navbar">
             <div class="navbar-brand">
-                <a href="@GetUrlWithParams("/")">PushApps</a>
+                <span style="cursor: default;">PushApps</span>
             </div>
             <div class="navbar-links">
                 <a href="@GetUrlWithParams("/workouts/daily-training")" class="nav-link @GetMainActiveClass("workouts")">WORKOUTS</a>
                 <a href="@GetUrlWithParams("/progress/info")" class="nav-link @GetMainActiveClass("progress")">PROGRESS</a>
                 <a href="@GetUrlWithParams("/meals/today")" class="nav-link @GetMainActiveClass("meals")">MEALS</a>
 
-                <!-- DODANI PROFILE DROPDOWN -->
+                <!-- UPDATED PROFILE DROPDOWN -->
                 <div class="profile-dropdown">
-                    <a href="#" class="nav-link @GetMainActiveClass("profile") profile-link">MY PROFILE</a>
+                    <a href="@GetUrlWithParams("/profile/view")" class="nav-link @GetMainActiveClass("profile") profile-link">MY PROFILE</a>
                     <div class="profile-dropdown-content">
-                        <a href="@GetUrlWithParams("/profile/personal")">
-                            <i class="fas fa-user"></i> View My Profile
-                        </a>
                         <a href="/login" @onclick="HandleLogout" @onclick:preventDefault="true">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
@@ -69,11 +66,6 @@
                             View my plan
                         </a>
                     </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/progress/progress")" class="sidebar-link @GetActiveClass("/progress/progress")">
-                            Progress Tracking
-                        </a>
-                    </li>
                 }
                 else if (CurrentSection == "meals")
                 {
@@ -92,47 +84,12 @@
                             Meal History
                         </a>
                     </li>
-                    <!--<li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/meals/recipes")" class="sidebar-link @GetActiveClass("/meals/recipes")">
-                            Recipes
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/meals/nutrition")" class="sidebar-link @GetActiveClass("/meals/nutrition")">
-                            Nutrition Tracker
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/meals/shopping")" class="sidebar-link @GetActiveClass("/meals/shopping")">
-                            Shopping List
-                        </a>
-                    </li>-->
                 }
                 else if (CurrentSection == "profile")
                 {
                     <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/profile/personal")" class="sidebar-link @GetActiveClass("/profile/personal")">
+                        <a href="@GetUrlWithParams("/profile/view")" class="sidebar-link @GetActiveClass("/profile/personal")">
                             Personal Info
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/profile/physical")" class="sidebar-link @GetActiveClass("/profile/physical")">
-                            Physical Data
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/profile/preferences")" class="sidebar-link @GetActiveClass("/profile/preferences")">
-                            Preferences
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/profile/account")" class="sidebar-link @GetActiveClass("/profile/account")">
-                            Account Settings
-                        </a>
-                    </li>
-                    <li class="sidebar-item">
-                        <a href="@GetUrlWithParams("/profile/notifications")" class="sidebar-link @GetActiveClass("/profile/notifications")">
-                            Notifications
                         </a>
                     </li>
                 }
@@ -205,7 +162,7 @@
             "daily-training", "training-history", "view-all",
             "info", "create-plan", "my-plans", "progress", "statistics",
             "today", "add", "history", "recipes", "nutrition", "shopping",
-            "personal", "physical", "preferences", "account", "notifications", "my-plan"
+            "personal", "physical", "preferences", "account", "notifications", "my-plan", "view"
         };
         return pageNames.Contains(segment);
     }
@@ -252,7 +209,7 @@
         return CurrentSection == section ? "active" : "";
     }
 
-    /// KLJUČNA METODA - uvijek dodaje userId i userName na sve linkove
+    /// uvijek dodaje userId i userName na sve linkove
     private string GetUrlWithParams(string baseUrl)
     {
         if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(userName))
@@ -262,10 +219,8 @@
         return baseUrl;
     }
 
-    // DODANA LOGOUT METODA
     private void HandleLogout()
     {
-        // Možete dodati dodatnu logiku za cleanup session-a ovde ako je potrebno
         NavigationManager.NavigateTo("/login", true);
     }
 

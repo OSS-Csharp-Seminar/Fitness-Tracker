@@ -27,9 +27,6 @@
             {
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i> All exercises completed for today!
-                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="GenerateNewWorkout">
-                        Generate Tomorrow's Workout
-                    </button>
                 </div>
             }
         }
@@ -37,15 +34,6 @@
         {
             <div class="alert alert-warning">
                 <h5>@noWorkoutMessage</h5>
-                @if (hasActivePlan)
-                {
-                    <button class="btn btn-primary" @onclick="GenerateNewWorkout">Generate Today's Workout</button>
-                }
-                else
-                {
-                    <p>You need to create a workout plan first.</p>
-                    <button class="btn btn-success" @onclick="NavigateToCreatePlan">Create Workout Plan</button>
-                }
             </div>
         }
     </div>
@@ -86,7 +74,7 @@ else if (todayWorkouts.Any())
                                 }
                                 else
                                 {
-                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 300px; width: 300px;">
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 100px; width: 100px;">
                                         <i class="fas fa-dumbbell fa-2x text-muted"></i>
                                     </div>
                                 }
@@ -158,7 +146,6 @@ else if (todayWorkouts.Any())
             <p>You've completed all your workouts for today! Great job! 🎉</p>
             <div class="mt-3">
                 <button class="btn btn-primary" @onclick="ViewWorkoutHistory">View Workout History</button>
-                <button class="btn btn-outline-primary ms-2" @onclick="GenerateNewWorkout">Preview Tomorrow's Workout</button>
             </div>
         </div>
     }
@@ -254,6 +241,7 @@ else if (todayWorkouts.Any())
         {
             loadingMessage = "Checking for today's workouts...";
 
+            // Automatski dohvati/generiraj workouts za danas
             todayWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
 
             if (!todayWorkouts.Any())
@@ -316,43 +304,6 @@ else if (todayWorkouts.Any())
         {
             errorMessage = $"Error updating workout: {ex.Message}";
         }
-    }
-
-    private async Task GenerateNewWorkout()
-    {
-        if (currentUser == null) return;
-
-        isLoading = true;
-        loadingMessage = "Generating new workout...";
-        errorMessage = string.Empty;
-
-        try
-        {
-            todayWorkouts = await WorkoutPlanService.GetOrGenerateWorkoutsForToday(currentUser);
-
-            if (todayWorkouts.Any())
-            {
-                await LoadTodayWorkouts();
-                noWorkoutMessage = string.Empty;
-            }
-            else
-            {
-                noWorkoutMessage = "Unable to generate workout. Please check your workout plan.";
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error generating workout: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
-        }
-    }
-
-    private void NavigateToCreatePlan()
-    {
-        NavigationManager.NavigateTo($"/my-plan/create-plan?userId={currentUser?.Id}&userName={UserName}");
     }
 
     private void ViewWorkoutHistory()

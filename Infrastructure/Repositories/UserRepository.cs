@@ -2,17 +2,20 @@
 using Domain.Interfaces;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
     public class UserRepository : BaseRepository<User>, IUserRepository
     {
         private readonly UserManager<User> _userManager;
+        private readonly ApplicationDbContext _context;
 
         public UserRepository(UserManager<User> userManager, ApplicationDbContext context)
             : base(context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
         public async Task<User> AddAsync(User user, string password)
@@ -41,11 +44,31 @@ namespace Infrastructure.Repositories
         {
             try
             {
-                var result = await _userManager.UpdateAsync(user);
-                return result.Succeeded;
+                // custom svojstva
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+                if (existingUser == null)
+                    return false;
+
+                // Update custom 
+                existingUser.Birthday = user.Birthday;
+                existingUser.Gender = user.Gender;
+                existingUser.Height = user.Height;
+                existingUser.Allergies = user.Allergies;
+                existingUser.Diagnosis = user.Diagnosis;
+                existingUser.Role = user.Role;
+
+                existingUser.UserName = user.UserName;
+                existingUser.Email = user.Email;
+                existingUser.NormalizedUserName = user.UserName.ToUpper();
+                existingUser.NormalizedEmail = user.Email.ToUpper();
+
+                await _context.SaveChangesAsync();
+
+                return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Update error: {ex}");
                 return false;
             }
         }
@@ -90,6 +113,5 @@ namespace Infrastructure.Repositories
 
             return await _userManager.CheckPasswordAsync(user, password);
         }
-
     }
 }
